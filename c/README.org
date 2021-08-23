@@ -1,5 +1,3 @@
 #+TITLE: ls
 #+AUTHOR: Chris Boette @chrisbodhi
 #+DATE: 23 August 12021
-
-* ls
