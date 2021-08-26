@@ -59,7 +59,7 @@ int main() {
 
 
 
-* Meta notes
-** Development is done using org-mode's tangle functionality, which allows for interleaving source code and plain text notes, without having to write those notes as comments in the source code. A library (for convenience) has been added, so that an updated, source code file is created on each save: [[https://github.com/yilkalargaw/org-auto-tangle][org-auto-tangle]]
-** To run the tangled file when it's created, =wach= is running the command ~$ wach "gcc -o cb-ls cb-ls.c && ./cb-ls"~ to compile and execute the file on each change: [[https://github.com/quackingduck/wach][wach]]
-** =vterm= is being used in Emacs to see the output directly next to the literate file: [[https://github.com/akermu/emacs-libvterm][libvterm]]
+** Meta notes
+- Development is done using org-mode's tangle functionality, which allows for interleaving source code and plain text notes, without having to write those notes as comments in the source code. A library (for convenience) has been added, so that an updated, source code file is created on each save: [[https://github.com/yilkalargaw/org-auto-tangle][org-auto-tangle]]
+- To run the tangled file when it's created, =wach= is running the command ~$ wach "gcc -o cb-ls cb-ls.c && ./cb-ls"~ to compile and execute the file on each change: [[https://github.com/quackingduck/wach][wach]]
+- =vterm= is being used in Emacs to see the output directly next to the literate file: [[https://github.com/akermu/emacs-libvterm][libvterm]]
