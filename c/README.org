@@ -1,9 +1,52 @@
+:PROPERTIES:
+:ID:       c20af4a4-17d6-40c4-8f2c-d1c1766944b8
+:END:
 #+TITLE: ls
 #+AUTHOR: Chris Boette @chrisbodhi
 #+DATE: 23 August 12021
+#+auto_tangle: t
 
 #+begin_quote
 Please implement a minimal clone of the =ls= program. We have chosen this exercise as it will require you to use structs, pointers and arrays, as well as some C standard library functions with interesting interfaces. It will also likely to be substantial enough to merit some degree of code organization.
 
 Minimally, it should list the contents of a directory including some information about each file, such as file size. As a stretch goal, use =man ls= to identify any interesting flags you may wish to support, and implement them.
 #+end_quote
+
+
+To begin, let's include the headers from the standard library that we'll need. This will allow us to access functions that ship with C, but are separate from the core functionality of the language.
+
+#+begin_src C :tangle cb-ls.c
+#include <stdio.h>
+#+end_src
+
+Next, we'll set up our =main= function, which will be called when our executable is called with =cb-ls=. We'll start with returning =0= to signal that we exited without any issues.
+
+#+begin_src C :tangle cb-ls.c
+int main() {
+  printf("here we are...\n");
+  return 0;
+}
+#+end_src
+
+#+begin_src C :tangle no :includes <errno.h> <stdio.h> <dirent.h> <unistd.h>
+int main() {
+  /* readdir(opendir(get_current_dir_name())); */
+  char *cd = getcwd(NULL, 0);
+  printf("curr dir is %s\n", cd);
+  struct dirent *lss;
+
+  while (lss = readdir(opendir(cd))) {
+      if (lss != EBADF) {
+        printf("name is %s\n", "yo");
+      }
+  }
+  return 0;
+}
+#+end_src
+
+#+RESULTS:
+
+** Meta notes
+*** Development is done using org-mode's tangle functionality, which allows for interleaving source code and plain text notes, without having to write those notes as comments in the source code. A library (for convenience) has been added, so that an updated, source code file is created on each save: [[https://github.com/yilkalargaw/org-auto-tangle][org-auto-tangle]]
+*** To run the tangled file when it's created, =wach= is running the command ~$ wach "gcc -o cb-ls cb-ls.c && ./cb-ls"~ to compile and execute the file on each change: [[https://github.com/quackingduck/wach][wach]]
+*** =vterm= is being used in Emacs to see the output directly next to the literate file: [[https://github.com/akermu/emacs-libvterm][libvterm]]
