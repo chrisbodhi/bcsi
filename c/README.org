@@ -18,6 +18,7 @@ To begin, let's include the headers from the standard library that we'll need. T
 #+begin_src C :tangle cb-ls.c :main no
 #include <dirent.h>
 #include <stdio.h>
+#include <errno.h>
 #+end_src
 
 Next, we'll set up our =main= function, which will be called when our executable is called with =cb-ls=. We'll start with returning =0= to signal that we exited without any issues.
@@ -31,16 +32,13 @@ int main() {
 
 Then, we'll start to rough out the function that will do the bulk of the work, =ls=.
 
-#+begin_src C :tangle cb-ls.c
-void ls();
-
-void ls() {
+#+begin_src C
+void ls(char *tolist) {
     DIR *d;
     struct dirent *l;
 
-    d = opendir("./");
+    d = opendir(tolist);
 
-    printf("welp\n");
     while((l = readdir(d)) != NULL) {
         printf("%s\n", l->d_name);
     }
@@ -48,16 +46,81 @@ void ls() {
 }
 #+end_src
 
-Next up, we call that sucker.
+Next up, we declare =ls= and then call that sucker.
 
 #+begin_src C :tangle cb-ls.c
-int main() {
-  ls();
+void ls(char *tolist);
+
+int main(int argc, char *argv[]) {
+  char *dir;
+
+  if (argc == 2) {
+      dir = argv[1];
+  } else {
+      dir = "./";
+  }
+
+  ls(dir);
   return 0;
 }
 #+end_src
 
+#+begin_src sh
+~/code/bcsi3/c/cb-ls
+#+end_src
 
+#+RESULTS:
+| .          |
+| ..         |
+| cb-ls      |
+| README.org |
+| cb-ls.c    |
+
+Which work! This is great! But, it doesn't handle bad input. :/
+
+#+begin_src sh
+~/code/bcsi3/c/cb-ls ../not/a/directory
+#+end_src
+
+#+RESULTS:
+[1]    34877 segmentation fault  ./cb-ls ../not/a/directory
+
+Let's tighten that shit up.
+
+We need to be able to handle the different kinds of errors, as outlined in some random-ass GNU libc PDF.
+
+Let's start with =opendir= having trouble with creating a stream from the passed-in directory name. When it fails, it returns a null pointer, so we check for that.
+
+#+begin_src C :tangle cb-ls.c
+int ls(char *tolist) {
+    DIR *d;
+    struct dirent *l;
+
+    d = opendir(tolist);
+
+    if (d == NULL) {
+        printf("Cannot open %s\nDoes that directory exist?\n", tolist);
+        return 1;
+    }
+
+    while((l = readdir(d)) != NULL) {
+        printf("%s\n", l->d_name);
+    }
+    closedir(d);
+
+    return 0;
+}
+#+end_src
+
+#+begin_src sh
+~/code/bcsi3/c/cb-ls ../not/a/directory
+#+end_src
+
+#+RESULTS:
+Cannot open ../not/a/directory
+Does that directory exist?
+
+Excellent. Note that we've also change the function's return type from =void= to =int=, so that when we error, we can return a non-zero exit code. This is a convention that signifies our program has run into an error.
 
 ** Meta notes
 - Development is done using org-mode's tangle functionality, which allows for interleaving source code and plain text notes, without having to write those notes as comments in the source code. A library (for convenience) has been added, so that an updated, source code file is created on each save: [[https://github.com/yilkalargaw/org-auto-tangle][org-auto-tangle]]
