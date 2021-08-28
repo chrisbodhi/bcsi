@@ -17,8 +17,9 @@ To begin, let's include the headers from the standard library that we'll need. T
 
 #+begin_src C :tangle cb-ls.c :main no
 #include <dirent.h>
-#include <stdio.h>
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #+end_src
 
 Next, we'll set up our =main= function, which will be called when our executable is called with =cb-ls=. We'll start with returning =0= to signal that we exited without any issues.
@@ -30,10 +31,10 @@ int main() {
 }
 #+end_src
 
-Then, we'll start to rough out the function that will do the bulk of the work, =ls=.
+Then, we'll start to rough out the function that will do the bulk of the work, =ls=. After opening a stream for the requested directory, we go to the =while= loop, where we read the next directory (until there isn't one left; hence, the null check). The directory is represented by a struct(ure), from which we can take the =d_name= property to print out.
 
 #+begin_src C
-void ls(char *tolist) {
+int ls(char *tolist) {
     DIR *d;
     struct dirent *l;
 
@@ -43,13 +44,15 @@ void ls(char *tolist) {
         printf("%s\n", l->d_name);
     }
     closedir(d);
+
+    return 0;
 }
 #+end_src
 
 Next up, we declare =ls= and then call that sucker.
 
 #+begin_src C :tangle cb-ls.c
-void ls(char *tolist);
+int ls(char *tolist);
 
 int main(int argc, char *argv[]) {
   char *dir;
@@ -75,7 +78,7 @@ int main(int argc, char *argv[]) {
 | cb-ls.c    |
 #+end_src
 
-Which work! This is great! But, it doesn't handle bad input. :/
+Which works! This is great! But, it doesn't handle bad input. :/
 
 #+begin_src sh
 ~/code/bcsi3/c/cb-ls ../not/a/directory
@@ -117,7 +120,25 @@ Cannot open ../not/a/directory
 Does that directory exist?
 #+end_src
 
-Excellent. Note that we've also change the function's return type from =void= to =int=, so that when we error, we can return a non-zero exit code. This is a convention that signifies our program has run into an error.
+Excellent. Note that when we error, we return a non-zero exit code. This is a convention that signifies our program has run into an error.
+
+Before we get too much further into error handling, let's revist the functionality of our =ls= clone. Compared to =ls=, there are a couple of defaults we're doing differently, and not for any good reason. So, let's fix those: displaying =.= and =..=, and not sorting our results. Let's start with those dots, which represent links to the current directory (=.=) and parent directory (=..=).
+
+To remove the links, we could set up an =if= check around our =printf= statement, making sure that no files start with a =.=, but...
+
+#+begin_src C
+while((l = readdir(d)) != NULL) {
+  char name = l->d_name;
+  if (strncmp(name, ".", 1) != 0) {
+    printf("%s\n", l->d_name);
+  }
+}
+#+end_src
+
+...that discards any other information about the directory entry at each step through the loop. Also, this approach excludes any hidden files, in a hardcoded way.
+
+
+
 
 ** Meta notes
 - Development is done using org-mode's tangle functionality, which allows for interleaving source code and plain text notes, without having to write those notes as comments in the source code. A library (for convenience) has been added, so that an updated, source code file is created on each save: [[https://github.com/yilkalargaw/org-auto-tangle][org-auto-tangle]]
