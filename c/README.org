@@ -67,23 +67,21 @@ int main(int argc, char *argv[]) {
 
 #+begin_src sh
 ~/code/bcsi3/c/cb-ls
-#+end_src
 
-#+RESULTS:
 | .          |
 | ..         |
 | cb-ls      |
 | README.org |
 | cb-ls.c    |
+#+end_src
 
 Which work! This is great! But, it doesn't handle bad input. :/
 
 #+begin_src sh
 ~/code/bcsi3/c/cb-ls ../not/a/directory
-#+end_src
 
-#+RESULTS:
 [1]    34877 segmentation fault  ./cb-ls ../not/a/directory
+#+end_src
 
 Let's tighten that shit up.
 
@@ -114,11 +112,10 @@ int ls(char *tolist) {
 
 #+begin_src sh
 ~/code/bcsi3/c/cb-ls ../not/a/directory
-#+end_src
 
-#+RESULTS:
 Cannot open ../not/a/directory
 Does that directory exist?
+#+end_src
 
 Excellent. Note that we've also change the function's return type from =void= to =int=, so that when we error, we can return a non-zero exit code. This is a convention that signifies our program has run into an error.
 
