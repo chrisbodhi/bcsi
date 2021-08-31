@@ -51,7 +51,7 @@ int ls(char *tolist) {
 
 Next up, we declare =ls= and then call that sucker.
 
-#+begin_src C :tangle cb-ls.c
+#+begin_src C
 int ls(char *tolist);
 
 int main(int argc, char *argv[]) {
@@ -92,7 +92,7 @@ We need to be able to handle the different kinds of errors, as outlined in some 
 
 Let's start with =opendir= having trouble with creating a stream from the passed-in directory name. When it fails, it returns a null pointer, so we check for that.
 
-#+begin_src C :tangle cb-ls.c
+#+begin_src C
 int ls(char *tolist) {
     DIR *d;
     struct dirent *l;
@@ -135,9 +135,66 @@ while((l = readdir(d)) != NULL) {
 }
 #+end_src
 
-...that discards any other information about the directory entry at each step through the loop. Also, this approach excludes any hidden files, in a hardcoded way.
+...that discards any other information about the directory entry at each step through the loop. Also, this approach excludes any hidden files, in a hardcoded way. So, let's start with splitting apart our existing code into smaller parts which each part addresses one concern.
 
+At a high level:
+- Get the file names and inodes
+- Filter to what the user wants to see
+- Format the information
+- Sort it, to then...
+- Present what the user wants to see
 
+** Get the file names and inodes
+
+=inodes= is a new term here. Our way of reading the contents of a directory yields not a lot of information -- namely, the filename and its serial number. (WHERE DO WE GET THE RANK? :troll: ) We can take that serial number, though, and look up some more information, if the user requests it. For this step, we'll just collect the information in an array.
+
+#+begin_src C :tangle cb-ls.c
+#define LOTS 2000
+
+struct cb_dir {
+        ino_t ino;
+        char* name;
+    } cb_dirs[LOTS];
+
+// params: directory to open, empty array (pointer to start of array), current working index of array (init to zero)
+int getdirs(char *, struct cb_dir *, int);
+
+int main() {
+    int i, len;
+
+    i = 0;
+    len = getdirs(".", cb_dirs, i);
+    printf("len is %d, and first name is...%s.\n", len, cb_dirs[8].name);
+    if (len > LOTS) {
+        fprintf(stderr, "More dirs than slots for dirs.");
+        return 1;
+    }
+    return 0;
+}
+
+int getdirs(char *dirstr, struct cb_dir *dirs, int i) {
+    DIR *d;
+    struct dirent *l;
+
+    d = opendir(dirstr);
+
+    while((l = readdir(d)) != NULL) {
+        struct cb_dir dir = { l->d_fileno, l->d_name };
+        cb_dirs[i] = dir; // How to do with pointer?
+        ++i; // use pointers for count, instead of having this extra variable?
+    }
+    return i;
+}
+#+end_src
+
+#+begin_src sh
+./cb-ls
+
+#+RESULTS:
+ len is 11 and first name is...README.org.
+#+end_src
+
+Our =getdirs= function not only updates the =cb_dirs= array, but also returns the length of the array.
 
 
 ** Meta notes
