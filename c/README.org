@@ -166,9 +166,9 @@ int main() {
     i = 0;
     ip = &i;
     getdirs(".", cb_dirs, ip);
+
     printf("len is %d, and first name is...%s.\n", i, cb_dirs[0].name);
-    printf("len is %d, and fifth name is...%s.\n", i, cb_dirs[4].name);
-    printf("len is %d, and last name is...%s.\n", i, cb_dirs[i - 1].name);
+
     if (i > LOTS) {
         fprintf(stderr, "More dirs than slots for dirs.");
         return 1;
@@ -205,22 +205,34 @@ Our =getdirs= function not only updates the =cb_dirs= array, but also keeps trac
 
 Let's start with skipping all of the items that start with a =.=, or are hidden. We'll keep the logic to do this in a helper function, so we can selectively apply it later, as needed.
 
-#+begin_src C
-void removehidden(void *arr);
+#+begin_src C :includes <stdio.h> :tangle remove.c
+#include <stdio.h>
+#include <string.h>
 
-void removehidden(void *arr) {
+void removehidden(char **);
+
+void removehidden(char **arr) {
     char* starts = ".";
-    int i = 0;
-    while (arr[i] != NULL) {
-        if (arr[i].name[0] == starts) {
-            printf("oh snap\n");
-        }
-        i++;
-    }
+    printf("%10s\n", arr[0]);
+    printf("%10s\n", arr[1]);
+    /* while (arr != NULL) { */
+        /* if (strncmp(arr, starts, 0) == 0) { */
+            /* printf("oh snap\n"); */
+        /* } */
+        /* arr++; */
+    /* } */
 }
 
-removehidden();
+int main() {
+    char* names[3] = {"Abe", "Bonnie", ".Clyde"};
+
+    removehidden(names);
+}
 #+end_src
+
+#+RESULTS:
+| Abe    |
+| Bonnie |
 
 ** Meta notes
 - Development is done using org-mode's tangle functionality, which allows for interleaving source code and plain text notes, without having to write those notes as comments in the source code. A library (for convenience) has been added, so that an updated, source code file is created on each save: [[https://github.com/yilkalargaw/org-auto-tangle][org-auto-tangle]]
