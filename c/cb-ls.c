@@ -1,5 +1,5 @@
 #include <dirent.h>    /* ino_t */
-#include <errno.h>
+#include <errno.h>     /* stderr */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>    /* qsort */
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 
     i = 0;
     ip = &i;
-    // TODO add help
+    // TODO add help flag, string
     while ((opt = getopt(argc, argv, "al")) != -1) {
         switch(opt) {
         case 'a':
@@ -56,11 +56,15 @@ int main(int argc, char *argv[]) {
         case 'l':
             list = 1;
             break;
+        default:
+            // Exit code 1 if illegal option
+            return 1;
         }
     }
-    printf("show all? %d\nshow list? %d\n", all, list);
 
-    if (argc == 2) {
+    if (argc == 3) {
+        dir = argv[2];
+    } else if (argc == 2 && strncmp(argv[1], "-", 1) != 0) {
         dir = argv[1];
     } else {
         dir = ".";
