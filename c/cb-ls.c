@@ -7,10 +7,14 @@
 
 #define LOTS 2000
 
+const int true = 1;
+const int false = 0;
+
 struct cb_dir {
-        ino_t ino;
-        char* name;
-    } cb_dirs[LOTS];
+    ino_t ino;
+    char* name;
+    int hidden;
+} cb_dirs[LOTS];
 
 
 int dir_comp(const void *v1, const void *v2) {
@@ -33,7 +37,7 @@ void getdirs(char *dirstr, struct cb_dir *dirs, int *ip) {
     d = opendir(dirstr);
 
     while((l = readdir(d)) != NULL) {
-        struct cb_dir dir = { l->d_fileno, l->d_name };
+        struct cb_dir dir = { l->d_fileno, l->d_name, false };
         *dirs = dir;
         dirs++;
         (*ip)++;
@@ -45,16 +49,18 @@ int main(int argc, char *argv[]) {
     int *ip;
     char *dir;
 
+    all = false;
+    list = false;
     i = 0;
     ip = &i;
     // TODO add help flag, string
     while ((opt = getopt(argc, argv, "al")) != -1) {
         switch(opt) {
         case 'a':
-            all = 1;
+            all = true;
             break;
         case 'l':
-            list = 1;
+            list = true;
             break;
         default:
             // Exit code 1 if illegal option
