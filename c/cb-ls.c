@@ -16,7 +16,6 @@ struct cb_dir {
     int hidden;
 } cb_dirs[LOTS];
 
-
 int dir_comp(const void *v1, const void *v2) {
     const struct cb_dir *d1 = v1;
     const struct cb_dir *d2 = v2;
@@ -29,6 +28,7 @@ int dir_comp(const void *v1, const void *v2) {
     // like return strcmp((*d1).name, (*d2).name);
     return strcmp(d1->name, d2->name);
 }
+
 // params: directory to open, empty array (pointer to start of array), pointer to current length of array
 void getdirs(char *dirstr, struct cb_dir *dirs, int *ip) {
     DIR *d;
@@ -53,32 +53,50 @@ void hidehidden(struct cb_dir *dirs) {
     }
 }
 
-void getdetails(struct cb_dir *dirs) {
-    for (; dirs->name != NULL; dirs++) {
+/* void hidehidden(struct cb_dir *dirs) { */
+/*     printf("only god can judge me, C\n"); */
+/*     while (dirs != NULL) { */
+/*         printf("a dir %s\n", dirs->name); */
+/*         if (strncmp(dirs->name, ".", 1) == 0) { */
+/*             dirs->hidden = true; */
+/*         } */
+/*         dirs++; */
+/*     } */
+/* } */
+
+void printnames(struct cb_dir *dirs) {
+    for(; dirs->name != NULL; dirs++) {
         if (!dirs->hidden) {
-            printf("%llu\n", dirs->ino);
+            printf("%s\t", dirs->name);
         }
     }
 }
 
+void printdetails(struct cb_dir *dirs) {
+    for (; dirs->name != NULL; dirs++) {
+        if (!dirs->hidden) {
+            printf("%llu %s\n", dirs->ino, dirs->name);
+        }
+    }
+}
 
 int main(int argc, char *argv[]) {
-    int i, opt, all, list;
+    int i, opt, all, inodes;
     int *ip;
     char *dir;
 
     all = false;
-    list = false;
+    inodes = false;
     i = 0;
     ip = &i;
     // TODO add help flag, string
-    while ((opt = getopt(argc, argv, "al")) != -1) {
+    while ((opt = getopt(argc, argv, "ai")) != -1) {
         switch(opt) {
         case 'a':
             all = true;
             break;
-        case 'l':
-            list = true;
+        case 'i':
+            inodes = true;
             break;
         default:
             // Exit code 1 if illegal option
@@ -96,27 +114,29 @@ int main(int argc, char *argv[]) {
 
     // Get dirs
     getdirs(dir, cb_dirs, ip);
-    // Sort dir names
-    qsort(cb_dirs, i, sizeof(struct cb_dir), dir_comp);
-    // Act on flags
-    // if *not* showing all
-    if (!all) {
-        hidehidden(cb_dirs);
-    }
-    if (list) {
-        getdetails(cb_dirs);
-    }
-
-    for(int j = 0; j < i; j++) {
-        if (!cb_dirs[j].hidden) {
-            printf("%s\t", cb_dirs[j].name);
-        }
-    }
-    printf("\n");
 
     if (i > LOTS) {
         fprintf(stderr, "More dirs than slots for dirs.");
         return 1;
     }
+
+    // Sort dir names
+    qsort(cb_dirs, i, sizeof(struct cb_dir), dir_comp);
+
+    // Act on flags
+    // if *not* showing all
+    if (!all) {
+        hidehidden(cb_dirs);
+    }
+
+    // show file's inode
+    if (inodes) {
+        printdetails(cb_dirs);
+    } else {
+        printnames(cb_dirs);
+    }
+
+    printf("\n");
+
     return 0;
 }
