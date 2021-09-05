@@ -53,17 +53,6 @@ void hidehidden(struct cb_dir *dirs) {
     }
 }
 
-/* void hidehidden(struct cb_dir *dirs) { */
-/*     printf("only god can judge me, C\n"); */
-/*     while (dirs != NULL) { */
-/*         printf("a dir %s\n", dirs->name); */
-/*         if (strncmp(dirs->name, ".", 1) == 0) { */
-/*             dirs->hidden = true; */
-/*         } */
-/*         dirs++; */
-/*     } */
-/* } */
-
 void printnames(struct cb_dir *dirs) {
     for(; dirs->name != NULL; dirs++) {
         if (!dirs->hidden) {
@@ -89,12 +78,15 @@ int main(int argc, char *argv[]) {
     inodes = false;
     i = 0;
     ip = &i;
-    // TODO add help flag, string
-    while ((opt = getopt(argc, argv, "ai")) != -1) {
+
+    while ((opt = getopt(argc, argv, "ahi")) != -1) {
         switch(opt) {
         case 'a':
             all = true;
             break;
+        case 'h':
+            printf("cb-ls\nA subset of ls\n\nFlags:\n\t-a:\tShow all files\n\t-i:\tShow inodes of files\n\t-----\n\t-h:\tShow this help\n");
+            return 0;
         case 'i':
             inodes = true;
             break;
