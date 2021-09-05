@@ -45,12 +45,11 @@ void getdirs(char *dirstr, struct cb_dir *dirs, int *ip) {
 }
 
 // mark dirs that start with . as hidden
-void hideHidden(struct cb_dir *dirs, int i) {
-    for (int j = 0; j < i; j++) {
+void hideHidden(struct cb_dir *dirs) {
+    for (; dirs->name != NULL; dirs++) {
         if (strncmp(dirs->name, ".", 1) == 0) {
             dirs->hidden = true;
         }
-        dirs++;
     }
 }
 
@@ -94,7 +93,7 @@ int main(int argc, char *argv[]) {
     // Act on flags
     // if *not* showing all
     if (!all) {
-        hideHidden(cb_dirs, i);
+        hideHidden(cb_dirs);
     }
 
     for(int j = 0; j < i; j++) {
