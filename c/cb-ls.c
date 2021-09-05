@@ -44,6 +44,17 @@ void getdirs(char *dirstr, struct cb_dir *dirs, int *ip) {
     }
 }
 
+// mark dirs that start with . as hidden
+void hideHidden(struct cb_dir *dirs, int i) {
+    for (int j = 0; j < i; j++) {
+        if (strncmp(dirs->name, ".", 1) == 0) {
+            dirs->hidden = true;
+        }
+        dirs++;
+    }
+}
+
+
 int main(int argc, char *argv[]) {
     int i, opt, all, list;
     int *ip;
@@ -76,13 +87,22 @@ int main(int argc, char *argv[]) {
         dir = ".";
     }
 
+    // Get dirs
     getdirs(dir, cb_dirs, ip);
-
+    // Sort dir names
     qsort(cb_dirs, i, sizeof(struct cb_dir), dir_comp);
+    // Act on flags
+    // if *not* showing all
+    if (!all) {
+        hideHidden(cb_dirs, i);
+    }
 
     for(int j = 0; j < i; j++) {
-        printf("name is %s\n", cb_dirs[j].name);
+        if (!cb_dirs[j].hidden) {
+            printf("%s\t", cb_dirs[j].name);
+        }
     }
+    printf("\n");
 
     if (i > LOTS) {
         fprintf(stderr, "More dirs than slots for dirs.");
@@ -90,4 +110,3 @@ int main(int argc, char *argv[]) {
     }
     return 0;
 }
-
