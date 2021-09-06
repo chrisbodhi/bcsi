@@ -139,9 +139,9 @@ while((l = readdir(d)) != NULL) {
 
 At a high level:
 - Get the file names and inodes
-- Filter to what the user wants to see
+- Sort it by file name
 - Format the information
-- Sort it, to then...
+- Filter to what the user wants to see
 - Present what the user wants to see
 
 ** Get the file names and inodes
@@ -200,6 +200,26 @@ void getdirs(char *dirstr, struct cb_dir *dirs, int *ip) {
 
 Our =getdirs= function not only updates the =cb_dirs= array, but also keeps track of the current length by updating a pointer.
 
+** Sort it by file name
+
+One thing to note about this array of structs that we now have is that it isn't in any immediately-obvious order. So, let's sort it by file name. We'll use the quicksort implementation included with =stdlib.h= and write our own comparer function, so that we may update the array in place.
+
+#+begin_src C :tangle cb-ls.c
+#include <stdlib.h>
+
+int dir_comp(const void *v1, const void *v2) {
+    const struct cb_dir *d1 = v1;
+    const struct cb_dir *d2 = v2;
+
+    // Returns <1, 0, or >1 after comparing the strings
+    // Note the use of -> to get the name property off of the struct
+    // Remember that we're using pointers to our array elements, so
+    // to get the properties from those elements, we could deference and
+    // then use the . to get the value, or just use ->
+    // like return strcmp((*d1).name, (*d2).name);
+    return strcmp(d1->name, d2->name);
+}
+#+end_src
 
 ** Filter to what the user wants to see
 
@@ -209,24 +229,23 @@ Let's start with skipping all of the items that start with a =.=, or are hidden.
 #include <stdio.h>
 #include <string.h>
 
-void removehidden(char **);
+void removehidden(char **, int);
 
-void removehidden(char **arr) {
+void removehidden(char **arr, int len) {
     char* starts = ".";
-    printf("%10s\n", arr[0]);
-    printf("%10s\n", arr[1]);
-    /* while (arr != NULL) { */
-        /* if (strncmp(arr, starts, 0) == 0) { */
-            /* printf("oh snap\n"); */
-        /* } */
-        /* arr++; */
-    /* } */
+    int i;
+    for (i = 0; i < len; ++i) {
+        if (strncmp(arr[i], starts, 1) != 0) {
+            printf("%s\n", arr[i]);
+        }
+    }
 }
 
 int main() {
-    char* names[3] = {"Abe", "Bonnie", ".Clyde"};
+    int len = 3;
+    char* names[] = {"Abe", "Bonnie", ".Clyde"};
 
-    removehidden(names);
+    removehidden(names, len);
 }
 #+end_src
 
@@ -236,5 +255,5 @@ int main() {
 
 ** Meta notes
 - Development is done using org-mode's tangle functionality, which allows for interleaving source code and plain text notes, without having to write those notes as comments in the source code. A library (for convenience) has been added, so that an updated, source code file is created on each save: [[https://github.com/yilkalargaw/org-auto-tangle][org-auto-tangle]]
-- To run the tangled file when it's created, =wach= is running the command ~$ wach "gcc -o cb-ls cb-ls.c && ./cb-ls"~ to compile and execute the file on each change: [[https://github.com/quackingduck/wach][wach]]
+- To run the tangled file when it's created, =wach= is running the command ~$ wach -o cb-ls.c, "gcc -o cb-ls cb-ls.c && ./cb-ls"~ to compile and execute the file on each change: [[https://github.com/quackingduck/wach][wach]]
 - =vterm= is being used in Emacs to see the output directly next to the literate file: [[https://github.com/akermu/emacs-libvterm][libvterm]]
