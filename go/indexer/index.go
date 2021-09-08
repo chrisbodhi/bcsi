@@ -30,7 +30,7 @@ func newComic(num int, transcript string, alt string) *Comic {
 	return &c
 }
 
-func exists() bool {
+func indexExists() bool {
 	_, err := os.Stat(IndexPath)
 	if os.IsNotExist(err) {
 		return false
@@ -38,8 +38,20 @@ func exists() bool {
 	return true
 }
 
-func updateIndex() {
-	fmt.Println("booyah")
+func updateIndex(startingIndex int) {
+	latestComic := fetchComic(latestXkcdURL)
+	indexLatestNum := getLatestNum()
+	if latestComic.Num > indexLatestNum {
+		// append latestComic to our index
+		row := structToRow(latestComic)
+		appendToIndex(row)
+		// start to iterate
+		start := latestComic.Num - 1 // since we have already added the latest comic, start with the comic that immediately precedes it
+		for ; start > indexLatestNum; start-- {
+			url := fmt.Sprint("https://xkcd.com/%d/info.0.json", start)
+			addComicToIndex(url)
+		}
+	}
 }
 
 func structToRow(c Comic) string {
@@ -94,8 +106,8 @@ func appendToIndex(row string) {
 	}
 }
 
-func populateIndex() {
-	resp, err := http.Get(latestXkcdURL)
+func fetchComic(url string) Comic {
+	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("fml")
 	}
@@ -106,32 +118,40 @@ func populateIndex() {
 
 	var comic Comic
 	if err := json.NewDecoder(resp.Body).Decode(&comic); err != nil {
-		resp.Body.Close()
 		log.Fatal(err)
 	}
+	return comic
+}
+
+func addComicToIndex(url string) {
+	comic := fetchComic(url)
 	row := structToRow(comic)
 	appendToIndex(row)
 }
 
-func makeIndex() {
+func populateIndex(url string) {
+	addComicToIndex(url)
+}
+
+func makeIndex(url string) {
 	err := os.WriteFile(IndexPath, []byte("num,transcript,alt\n"), 0666)
 	if err != nil {
 		log.Print(err)
 		log.Fatal("Could not create index.")
 	}
-	populateIndex()
+	populateIndex(url)
 }
 
 // GetOrMake retrieves the index, if it exists, so that we may update it.
 // If the index does not exist, we create the file and populate it with all of
 // the data.
 func GetOrMake() {
-	if exists() {
+	if indexExists() {
 		fmt.Println("Checking for updates...")
-		updateIndex()
+		latestFromIndex := getLatestNum()
+		updateIndex(latestFromIndex)
 	} else {
 		fmt.Println("Creating index...")
-		makeIndex()
+		makeIndex(latestXkcdURL)
 	}
-	fmt.Println(getLatestNum())
 }
