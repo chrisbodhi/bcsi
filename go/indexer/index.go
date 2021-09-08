@@ -1,12 +1,14 @@
 package indexer
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 )
 
 var home, _ = os.UserHomeDir()
@@ -14,7 +16,7 @@ var home, _ = os.UserHomeDir()
 // IndexPath is where our xkcd index file is stored
 var IndexPath = path.Join(home, ".xkcddb.csv")
 
-const LatestXkcdUrl = "https://xkcd.com/info.0.json"
+const latestXkcdURL = "https://xkcd.com/info.0.json"
 
 // Comic represents the minimal information we require, out of all of the fields provided by the xkcd JSON
 type Comic struct {
@@ -44,6 +46,39 @@ func structToRow(c Comic) string {
 	return fmt.Sprintf("%d,\"%s\",\"%s\"\n", c.Num, c.Transcript, c.Alt)
 }
 
+func getIndexContents() [][]string {
+	file, err := os.Open(IndexPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer file.Close()
+
+	r := csv.NewReader(file)
+
+	records, err := r.ReadAll()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return records[1:]
+}
+
+func getLatestNum() int {
+	records := getIndexContents()
+	var max int
+	for _, record := range records {
+		num, err := strconv.Atoi(record[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		if num > max {
+			max = num
+		}
+	}
+	return max
+}
+
 func appendToIndex(row string) {
 	index, err := os.OpenFile(IndexPath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
@@ -60,7 +95,7 @@ func appendToIndex(row string) {
 }
 
 func populateIndex() {
-	resp, err := http.Get(LatestXkcdUrl)
+	resp, err := http.Get(latestXkcdURL)
 	if err != nil {
 		fmt.Println("fml")
 	}
@@ -98,4 +133,5 @@ func GetOrMake() {
 		fmt.Println("Creating index...")
 		makeIndex()
 	}
+	fmt.Println(getLatestNum())
 }
