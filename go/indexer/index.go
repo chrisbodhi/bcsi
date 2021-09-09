@@ -40,17 +40,22 @@ func indexExists() bool {
 
 func updateIndex(startingIndex int) {
 	latestComic := fetchComic(latestXkcdURL)
-	indexLatestNum := getLatestNum()
-	if latestComic.Num > indexLatestNum {
+
+	if latestComic.Num > startingIndex {
 		// append latestComic to our index
 		row := structToRow(latestComic)
 		appendToIndex(row)
 		// start to iterate
 		start := latestComic.Num - 1 // since we have already added the latest comic, start with the comic that immediately precedes it
-		for ; start > indexLatestNum; start-- {
-			url := fmt.Sprint("https://xkcd.com/%d/info.0.json", start)
-			addComicToIndex(url)
-		}
+		loopIt(start, startingIndex)
+	}
+}
+
+// when we populate to start with, we pass in (latest from xkcd.com/info.0.json - 1) and zero
+func loopIt(start int, startingIndex int) {
+	for ; start > startingIndex; start-- {
+		url := fmt.Sprint("https://xkcd.com/%d/info.0.json", start)
+		addComicToIndex(url)
 	}
 }
 
