@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 var home, _ = os.UserHomeDir()
@@ -54,13 +56,22 @@ func updateIndex(startingIndex int) {
 // when we populate to start with, we pass in (latest from xkcd.com/info.0.json - 1) and zero
 func loopIt(start int, startingIndex int) {
 	for ; start > startingIndex; start-- {
-		url := fmt.Sprint("https://xkcd.com/%d/info.0.json", start)
+		if start == 404 {
+			fmt.Println("Just passing through...")
+			continue
+		}
+		url := fmt.Sprintf("https://xkcd.com/%d/info.0.json", start)
 		addComicToIndex(url)
 	}
 }
 
 func structToRow(c Comic) string {
-	return fmt.Sprintf("%d,\"%s\",\"%s\"\n", c.Num, c.Transcript, c.Alt)
+	quoteRe := regexp.MustCompile(`"`)
+	transcript := quoteRe.ReplaceAllString(c.Transcript, "'")
+	alt := quoteRe.ReplaceAllString(c.Alt, "'")
+	transcript = strings.ReplaceAll(transcript, "\n", " ")
+	alt = strings.ReplaceAll(alt, "\n", " ")
+	return fmt.Sprintf("%d,\"%s\",\"%s\"\n", c.Num, transcript, alt)
 }
 
 func getIndexContents() [][]string {
@@ -75,6 +86,7 @@ func getIndexContents() [][]string {
 
 	records, err := r.ReadAll()
 	if err != nil {
+		fmt.Println("cannot read from file")
 		log.Fatal(err)
 	}
 
@@ -96,6 +108,8 @@ func getLatestNum() int {
 	return max
 }
 
+// TODO replace with CSV writer
+// https://pkg.go.dev/encoding/csv@go1.17#Writer.Write
 func appendToIndex(row string) {
 	index, err := os.OpenFile(IndexPath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
@@ -114,6 +128,8 @@ func appendToIndex(row string) {
 func fetchComic(url string) Comic {
 	resp, err := http.Get(url)
 	if err != nil {
+		fmt.Println(url)
+		fmt.Println(err)
 		fmt.Println("fml")
 	}
 
@@ -136,14 +152,33 @@ func addComicToIndex(url string) {
 
 func populateIndex(url string) {
 	addComicToIndex(url)
+	latest := getLatestNum()
+	loopIt(latest-1, 0)
 }
 
 func makeIndex(url string) {
-	err := os.WriteFile(IndexPath, []byte("num,transcript,alt\n"), 0666)
+	f, err := os.Create(IndexPath)
 	if err != nil {
-		log.Print(err)
-		log.Fatal("Could not create index.")
+		log.Fatal(err)
 	}
+	records := [][]string{
+		{"num", "transcript", "alt"},
+	}
+
+	w := csv.NewWriter(f)
+
+	for _, record := range records {
+		if err := w.Write(record); err != nil {
+			log.Fatalln("error writing record to csv:", err)
+		}
+	}
+
+	w.Flush()
+
+	if err := w.Error(); err != nil {
+		log.Fatal(err)
+	}
+
 	populateIndex(url)
 }
 
