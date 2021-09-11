@@ -9,18 +9,18 @@ each comic that matches a search term provided on the command line.
 #+end_quote
 
 
-1. If index does not exist, create it; GOTO 3
-		x check for file at ~/.xkcddb.csv
-		- if it doesn't exist, execute createIndex
-			x let user know this is happening
-			x create ~/.xkcddb.csv, with num,transcript,alt as the headers
-			x get num, transcript, alt from https://xkcd.com/info.0.json -- this is the latest
-			x write to file
-			- while num > 0, repeat: http request, get num,transcript,alt then write to file
-				for i := firstnum - 1; i > 0; i-- (because we already have firstnum stored)
-		- GOTO 3
-2. Check if index is up to date; if not, update it
-		- let user know what is happening
+1. [x] If index does not exist, create it; GOTO 3
+		- [x] check for file at ~/.xkcddb.csv
+		- [x] if it doesn't exist, execute createIndex
+			- [x]  let user know this is happening
+			- [x]  create ~/.xkcddb.csv, with num,transcript,alt as the headers
+			- [x]  get num, transcript, alt from https://xkcd.com/info.0.json -- this is the latest
+			- [x]  write to file
+			- [x]  while num > 0, repeat: http request, get num,transcript,alt then write to file
+			        for i := firstnum - 1; i > 0; i-- (because we already have firstnum stored)
+		- [x] GOTO 3
+2. [x] Check if index is up to date; if not, update it
+		- [x] let user know what is happening
 3. execute search (test with more than one word)
 		- load each line at a time
 		- if transcript contains the search term, add to a slice along with URL (constructed using num)
