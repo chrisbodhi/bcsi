@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/chrisbodhi/bcsi/go/xkcd/indexer"
+	"github.com/chrisbodhi/bcsi/go/xkcd/printer"
 )
 
 // Search searches the xkcd index
@@ -32,8 +33,7 @@ func Search(search string) {
 		}
 		lineMatches := strings.Contains(strings.ToLower(strings.Join(line, " ")), strings.ToLower(search))
 		if lineMatches {
-			url := fmt.Sprintf("https://xkcd.com/%s\n", line[0])
-			io.WriteString(os.Stdout, url)
+			printer.Print(line)
 		}
 	}
 }
