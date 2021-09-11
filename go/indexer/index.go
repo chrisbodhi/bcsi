@@ -135,8 +135,6 @@ func fetchComic(url string) Comic {
 
 	defer resp.Body.Close()
 
-	fmt.Println("Response status:", resp.Status)
-
 	var comic Comic
 	if err := json.NewDecoder(resp.Body).Decode(&comic); err != nil {
 		log.Fatal(err)
@@ -190,8 +188,10 @@ func GetOrMake() {
 		fmt.Println("Checking for updates...")
 		latestFromIndex := getLatestNum()
 		updateIndex(latestFromIndex)
+		fmt.Println("All up to date.")
 	} else {
 		fmt.Println("Creating index...")
 		makeIndex(latestXkcdURL)
+		fmt.Println("Index created.")
 	}
 }
