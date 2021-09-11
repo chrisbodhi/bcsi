@@ -11,11 +11,19 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/chrisbodhi/bcsi/go/xkcd/indexer"
+	"github.com/chrisbodhi/bcsi/go/xkcd/searcher"
 )
 
 func main() {
-	fmt.Println("xkcd has been called!")
+	searchTerm := os.Args[1:]
+	if len(searchTerm) == 0 {
+		fmt.Println("Please enter a search term and try again.")
+		return
+	}
 	indexer.GetOrMake()
+	searcher.Search(strings.Join(searchTerm, " "))
 }

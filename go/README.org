@@ -21,7 +21,7 @@ each comic that matches a search term provided on the command line.
 		- [x] GOTO 3
 2. [x] Check if index is up to date; if not, update it
 		- [x] let user know what is happening
-3. execute search (test with more than one word)
-		- load each line at a time
-		- if transcript contains the search term, add to a slice along with URL (constructed using num)
-		- print the whole slice
+3. [x] execute search (test with more than one word)
+		- [x] load each line at a time
+		- +if transcript contains the search term, add to a slice along with URL (constructed using num)+
+		- [x] print the +whole slice+ constructed URL
