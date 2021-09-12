@@ -26,3 +26,16 @@ fmt.Println(comic.Num, comic.Transcript, comic.Alt)
 #+RESULTS:
 : Response status: 200 OK
 : 2512  And the heaven departed as a scroll when it is rolled together, but then more heaven kept appearing to replace it, as if the scroll was infinite.
+
+#+begin_src go :imports "fmt"
+d := 666
+ds := string(d)
+fmt.Println(ds, ds == "666")
+
+num := fmt.Sprintf("%d", d)
+fmt.Println(num, num == "666")
+#+end_src
+
+#+RESULTS:
+: ʚ false
+: 666 true
