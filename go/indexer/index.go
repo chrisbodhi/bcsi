@@ -2,15 +2,15 @@ package indexer
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/chrisbodhi/bcsi/go/xkcd/fetcher"
 )
 
 var home, _ = os.UserHomeDir()
@@ -20,15 +20,8 @@ var IndexPath = path.Join(home, ".xkcddb.csv")
 
 const latestXkcdURL = "https://xkcd.com/info.0.json"
 
-// Comic represents the minimal information we require, out of all of the fields provided by the xkcd JSON
-type Comic struct {
-	Num        int
-	Transcript string
-	Alt        string
-}
-
-func newComic(num int, transcript string, alt string) *Comic {
-	c := Comic{num, transcript, alt}
+func newComic(num int, transcript string, alt string) *fetcher.Comic {
+	c := fetcher.Comic{num, transcript, alt}
 	return &c
 }
 
@@ -40,9 +33,7 @@ func indexExists() bool {
 	return true
 }
 
-func updateIndex(startingIndex int) {
-	latestComic := fetchComic(latestXkcdURL)
-
+func updateIndex(startingIndex int, latestComic fetcher.Comic) {
 	if latestComic.Num > startingIndex {
 		// append latestComic to our index
 		row := structToRow(latestComic)
@@ -65,13 +56,17 @@ func loopIt(start int, startingIndex int) {
 	}
 }
 
-func structToRow(c Comic) string {
+func structToRow(c fetcher.Comic) []string {
 	quoteRe := regexp.MustCompile(`"`)
+
 	transcript := quoteRe.ReplaceAllString(c.Transcript, "'")
 	alt := quoteRe.ReplaceAllString(c.Alt, "'")
+	num := fmt.Sprintf("%d", c.Num)
+
 	transcript = strings.ReplaceAll(transcript, "\n", " ")
 	alt = strings.ReplaceAll(alt, "\n", " ")
-	return fmt.Sprintf("%d,\"%s\",\"%s\"\n", c.Num, transcript, alt)
+
+	return []string{num, transcript, alt}
 }
 
 func getIndexContents() [][]string {
@@ -108,42 +103,27 @@ func getLatestNum() int {
 	return max
 }
 
-// TODO replace with CSV writer
-// https://pkg.go.dev/encoding/csv@go1.17#Writer.Write
-func appendToIndex(row string) {
-	index, err := os.OpenFile(IndexPath, os.O_APPEND|os.O_WRONLY, 0644)
+func appendToIndex(row []string) {
+	f, err := os.OpenFile(IndexPath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Println("cannot open file")
 		log.Fatal(err)
 	}
 
-	defer index.Close()
+	defer f.Close()
 
-	if _, err := index.WriteString(row); err != nil {
-		fmt.Println("cannot write string", row)
-		log.Fatal(err)
+	w := csv.NewWriter(f)
+	w.Write(row)
+
+	w.Flush()
+
+	if err := w.Error(); err != nil {
+		log.Fatalln("error writing csv:", err)
 	}
-}
-
-func fetchComic(url string) Comic {
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Println(url)
-		fmt.Println(err)
-		fmt.Println("fml")
-	}
-
-	defer resp.Body.Close()
-
-	var comic Comic
-	if err := json.NewDecoder(resp.Body).Decode(&comic); err != nil {
-		log.Fatal(err)
-	}
-	return comic
+	fmt.Print(".")
 }
 
 func addComicToIndex(url string) {
-	comic := fetchComic(url)
+	comic := fetcher.FetchComic(url)
 	row := structToRow(comic)
 	appendToIndex(row)
 }
@@ -154,7 +134,7 @@ func populateIndex(url string) {
 	loopIt(latest-1, 0)
 }
 
-func makeIndex(url string) {
+func makeIndex() {
 	f, err := os.Create(IndexPath)
 	if err != nil {
 		log.Fatal(err)
@@ -176,8 +156,6 @@ func makeIndex(url string) {
 	if err := w.Error(); err != nil {
 		log.Fatal(err)
 	}
-
-	populateIndex(url)
 }
 
 // GetOrMake retrieves the index, if it exists, so that we may update it.
@@ -187,11 +165,13 @@ func GetOrMake() {
 	if indexExists() {
 		fmt.Println("Checking for updates...")
 		latestFromIndex := getLatestNum()
-		updateIndex(latestFromIndex)
+		latestComic := fetcher.FetchComic(latestXkcdURL)
+		updateIndex(latestFromIndex, latestComic)
 		fmt.Println("All up to date.")
 	} else {
 		fmt.Println("Creating index...")
-		makeIndex(latestXkcdURL)
+		makeIndex()
+		populateIndex(latestXkcdURL)
 		fmt.Println("Index created.")
 	}
 }

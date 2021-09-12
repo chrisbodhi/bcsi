@@ -5,12 +5,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/chrisbodhi/bcsi/xkcd/indexer"
 )
 
+// Comic represents the minimal information we require, out of all of the fields provided by the xkcd JSON
+type Comic struct {
+	Num        int
+	Transcript string
+	Alt        string
+}
+
 // FetchComic gets the URL's contents and returns them, ready for saving
-func FetchComic(url string) indexer.Comic {
+func FetchComic(url string) Comic {
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println(url)
@@ -20,9 +25,10 @@ func FetchComic(url string) indexer.Comic {
 
 	defer resp.Body.Close()
 
-	var comic indexer.Comic
+	var comic Comic
 	if err := json.NewDecoder(resp.Body).Decode(&comic); err != nil {
 		log.Fatal(err)
 	}
+
 	return comic
 }

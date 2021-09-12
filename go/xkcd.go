@@ -22,7 +22,7 @@ func main() {
 	searchTerm := os.Args[1:]
 	if len(searchTerm) == 0 {
 		fmt.Println("Please enter a search term and try again.")
-		return
+		os.Exit(1)
 	}
 	indexer.GetOrMake()
 	searcher.Search(strings.Join(searchTerm, " "))
