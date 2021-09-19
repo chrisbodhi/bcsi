@@ -57,6 +57,20 @@ func compute(memory []byte) {
 		// sub     r1  r2      # Set r1 = r1 - r2
 		case Sub:
 			memory[r1] -= memory[r2]
+		// jump    r1          # Set pc to pc + r1
+		case Jump:
+			pc = int(r1)
+			fmt.Println("Jump")
+			fmt.Println("~~~")
+			return
+		// beqz    r1  r2      # If memory at r1 equals 0, increment the pc by the amount at r2; otherwise, continue
+		case Beqz:
+			if memory[r1] == 0 {
+				pc += int(memory[r2])
+				return
+			}
+		case Addi:
+			fmt.Println("Addi")
 		// no params
 		case Halt:
 			fmt.Println("Halt")
