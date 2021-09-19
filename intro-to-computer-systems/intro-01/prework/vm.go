@@ -30,8 +30,8 @@ const (
 func compute(memory []byte) {
 	fmt.Println("memory", memory)
 	// Program command (Load, Store, Add, etc), first arg, second arg
-	registers := [3]byte{8, 0, 0} // PC, R1 and R2
-	pc := 8
+	pc := byte(8)
+	registers := [3]byte{pc, 0, 0} // PC, R1 and R2
 
 	// Keep looping, like a physical computer's clock
 	for {
@@ -59,14 +59,14 @@ func compute(memory []byte) {
 			memory[r1] -= memory[r2]
 		// jump    r1          # Set pc to pc + r1
 		case Jump:
-			pc = int(r1)
+			pc = r1
 			fmt.Println("Jump")
 			fmt.Println("~~~")
 			return
 		// beqz    r1  r2      # If memory at r1 equals 0, increment the pc by the amount at r2; otherwise, continue
 		case Beqz:
 			if memory[r1] == 0 {
-				pc += int(memory[r2])
+				pc += memory[r2]
 				return
 			}
 		case Addi:
@@ -78,6 +78,6 @@ func compute(memory []byte) {
 			return
 		}
 		// Incrememnt program counter
-		pc += len(registers)
+		pc += byte(len(registers))
 	}
 }
