@@ -28,7 +28,6 @@ const (
 // ^==DATA===============^ ^==INSTRUCTIONS==============^
 //
 func compute(memory []byte) {
-	fmt.Println("memory", memory)
 	// Program command (Load, Store, Add, etc), first arg, second arg
 	pc := byte(8)
 	registers := [3]byte{pc, 0, 0} // PC, R1 and R2
@@ -60,8 +59,6 @@ func compute(memory []byte) {
 		// jump    r1          # Set pc to pc + r1
 		case Jump:
 			pc = r1
-			fmt.Println("Jump")
-			fmt.Println("~~~")
 			return
 		// beqz    r1  r2      # If memory at r1 equals 0, increment the pc by the amount at r2; otherwise, continue
 		case Beqz:
@@ -73,8 +70,6 @@ func compute(memory []byte) {
 			fmt.Println("Addi")
 		// no params
 		case Halt:
-			fmt.Println("Halt")
-			fmt.Println("~~~")
 			return
 		}
 		// Incrememnt program counter
