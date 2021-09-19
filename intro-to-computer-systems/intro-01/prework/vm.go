@@ -47,31 +47,23 @@ func compute(memory []byte) {
 		switch op {
 		// load    r1  addr    # Load value at given address into given register
 		case Load:
-			fmt.Println("Load")
-			memory[r1] = r2
-			// 	store   r2  addr    # Store the value in register at the given memory address
+			memory[r1] = memory[r2]
+		// 	store   r2  addr    # Store the value in register at the given memory address
 		case Store:
-			fmt.Println("in store", registers)
 			memory[r2] = memory[r1]
-			fmt.Println("Store", memory[r2])
 		// add     r1  r2      # Set r1 = r1 + r2
 		case Add:
-			fmt.Println("Add")
-			fmt.Println("What about", r1, r2)
 			memory[r1] += memory[r2]
-			fmt.Println("r1 is", memory[r1])
 		// sub     r1  r2      # Set r1 = r1 - r2
 		case Sub:
-			fmt.Println("Sub")
+			memory[r1] -= memory[r2]
 		// no params
 		case Halt:
 			fmt.Println("Halt")
 			fmt.Println("~~~")
 			return
 		}
-
-		pc3 := pc + 3
-		memory[pc] = memory[pc3]
-		pc = pc3
+		// Incrememnt program counter
+		pc += len(registers)
 	}
 }
