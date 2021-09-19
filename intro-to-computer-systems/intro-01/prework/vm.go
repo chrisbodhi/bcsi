@@ -44,30 +44,32 @@ func compute(memory []byte) {
 
 		// decode and execute
 		switch op {
-		// load    r1  addr    # Load value at given address into given register
+		// load		r1 addr		# Load value at given address into given register
 		case Load:
 			memory[r1] = memory[r2]
-		// 	store   r2  addr    # Store the value in register at the given memory address
+		// store	r2 addr		# Store the value in register at the given memory address
 		case Store:
 			memory[r2] = memory[r1]
-		// add     r1  r2      # Set r1 = r1 + r2
+		// add		r1 r2		# Set r1 = r1 + r2
 		case Add:
 			memory[r1] += memory[r2]
-		// sub     r1  r2      # Set r1 = r1 - r2
+		// sub		r1 r2		# Set r1 = r1 - r2
 		case Sub:
 			memory[r1] -= memory[r2]
-		// jump    r1          # Set pc to pc + r1
+		// jump		r1			# Set pc to pc + r1
 		case Jump:
 			pc = r1
 			return
-		// beqz    r1  r2      # If memory at r1 equals 0, increment the pc by the amount at r2; otherwise, continue
+		// beqz		r1 r2		# If memory at r1 equals 0, increment the pc by the amount at r2; otherwise, continue
 		case Beqz:
 			if memory[r1] == 0 {
 				pc += memory[r2]
 				return
 			}
+		// addi		r1 r2		# Add values passed as args, not adding what's in store
 		case Addi:
-			fmt.Println("Addi")
+			// TODO
+			fmt.Println("Addi", registers)
 		// no params
 		case Halt:
 			return
