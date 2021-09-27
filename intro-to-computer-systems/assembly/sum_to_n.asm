@@ -1,5 +1,4 @@
 ; Returns the sum of all numbers from 1 to n, inclusive
-; TODO bonus points for using math -- ((n ^ 2) + n) / 2 -- to get the answer, rather than a loop
 
 			global 		sum_to_n
 
@@ -15,3 +14,12 @@ sum_to_n:	mov			rsi, rdi
 			cmp			rsi, 0
 			jne			.work
 			ret
+
+;; Uses the formula ((n * n) + n) / 2
+;; sum_to_n:	mov		rsi, rdi
+;; 			imul	rsi, rsi
+;; 			add 	rsi, rdi
+;; 			mov 	rax, rsi
+;; 			mov 	rcx, 2
+;; 			div		rcx
+;; 			ret
