@@ -1,0 +1,41 @@
+#+begin_src go :imports '("encoding/json" "fmt" "net/http")
+type Comic struct {
+	Num int
+	Transcript string
+	Alt string
+}
+
+resp, err := http.Get("https://xkcd.com/info.0.json")
+if err != nil {
+	fmt.Println("fml")
+}
+defer resp.Body.Close()
+
+fmt.Println("Response status:", resp.Status)
+
+var comic Comic
+if err := json.NewDecoder(resp.Body).Decode(&comic); err != nil {
+	resp.Body.Close()
+	fmt.Println("different fml")
+	// return err, nil
+}
+fmt.Println(comic.Num, comic.Transcript, comic.Alt)
+// return nil, &comic
+#+end_src
+
+#+RESULTS:
+: Response status: 200 OK
+: 2512  And the heaven departed as a scroll when it is rolled together, but then more heaven kept appearing to replace it, as if the scroll was infinite.
+
+#+begin_src go :imports "fmt"
+d := 666
+ds := string(d)
+fmt.Println(ds, ds == "666")
+
+num := fmt.Sprintf("%d", d)
+fmt.Println(num, num == "666")
+#+end_src
+
+#+RESULTS:
+: ʚ false
+: 666 true
