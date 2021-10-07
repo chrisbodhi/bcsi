@@ -1,0 +1,135 @@
+* Which instructions would you expect your compiler to generate for this function?
+** pagecount label
+*** Set register =%rdx= to zero (CS:APP, p. 200)
+*** +=divq=+ =div= for the unsigned divide (line 8)
+=divq= is for AT&T, with its blasted size suffixes
+*** DONE fill in mov, etc, instructions
+#+begin_src nasm
+pagecount:
+    xor  edx, edx ; Zero out edx to zero out rdx (register used for remainder of unsigned divide)
+    mov rdi, rax ; Move 1st arg (dividend, mem_size) to dest for output
+    div rsi ; take 2nd arg (divisor, page_size) as operand; will update rax (with the quotient) and put remainder in rdx (expected to be zero)
+    ret
+#+end_src
+
+* What does it in fact generate?
+Oh snap! It correctly accounts for the size of the input numbers, which I saw and registered as (unsigned) int 64, but did not account for the 64 part of it. The compiler (clang 12.0.1) puts this shit on the stack, because it has these big-ass numbers.
+#+begin_src nasm
+pagecount:                              # @pagecount
+        push    rbp
+        mov     rbp, rsp
+        mov     qword ptr [rbp - 8], rdi
+        mov     qword ptr [rbp - 16], rsi
+        mov     rax, qword ptr [rbp - 8]
+        xor     ecx, ecx
+        mov     edx, ecx
+        div     qword ptr [rbp - 16]
+        pop     rbp
+        ret
+#+end_src
+
+...but it also takes this approach with plain ol' =int= types. Hm.
+
+#+begin_src nasm
+pagecount:                              # @pagecount
+        push    rbp
+        mov     rbp, rsp
+        mov     dword ptr [rbp - 4], edi
+        mov     dword ptr [rbp - 8], esi
+        mov     eax, dword ptr [rbp - 4]
+        cdq
+        idiv    dword ptr [rbp - 8]
+        pop     rbp
+        ret
+#+end_src
+
+* If you change the optimization level, is the function substantially different?
+Ha, yes, very. It boils down to pretty much just =mov=, =xor=, and =div= with the =-O1= optimization.
+
+#+begin_src nasm
+pagecount:                              # @pagecount
+        mov     rax, rdi
+        xor     edx, edx
+        div     rsi
+        ret
+#+end_src
+
+* Use godbolt.org to explore a few different compilers. Do any of them generate substantially different instructions?
+
+Not especially, no.
+
+* By using Agner Fog’s instruction tables or reviewing CS:APP chapter 5.7, can you determine which of the generated instructions may be slow?
+
+Via Agner Fog, looking at Sandy Bridge
+
+| Instruct | Ops    | uops fused domain | p015 | Latency | Reciprocal throughput |
+|----------+--------+-------------------+------+---------+-----------------------|
+| MOV      | r,r/i  |                 1 |    1 |       1 |                       |
+| XOR      | r,same |                 1 |    0 |       0 |                  0.25 |
+| DIV      | r64    |             34-56 |    x |   30-94 |                 22-76 |
+| SHR      | r,i    |                 1 |    1 |       1 |                   0.5 |
+
+TODO read 5.7
+
+-----
+
+Next, let’s improve performance!
+
+* Noting that a page size is always a power of 2, and that the size of memory will always be cleanly divisible by the page size, can you think of a performance optimization we could employ? You are welcome to change the function signature and test runner code.
+
+=shr= with =%rcx=, but by how much? Idea: get the power by which we've raised the page size by 2. Which is poorly worded. If the page size can be expressed by 2 ^ n, get n.
+
+#+begin_src C :includes <stdio.h> <stdint.h>
+int get_expo(uint64_t num);
+
+int main() {
+    int n = get_expo(8);
+    printf("nums %d\n", n);
+    return 0;
+}
+
+int get_expo(uint64_t num) {
+  int n = 0;
+  while (num > 1) {
+    ++n;
+    num >>= 1;
+  }
+  return n;
+}
+
+#+end_src
+
+#+RESULTS:
+: nums 3
+
+Then, we bit-shift right the memory size by the exponent.
+
+* How much of an improvement would you expect to see?
+
+Since =DIV= has a latency of 30-94, and we're replacing it with some =MOV= and =SHR= instructions with latencies of 1, I'd expect lots.
+
+* Go ahead and make the improvement, and measure the speed up. Did this match your expectations?
+
+It did not! Maybe adding an extra function call slowed down tests from ~9ns per test to 50ns per test.
+
+What about moving the expo-getting step to inside the function?
+
+Only down to ~46ns per test!
+
+The loop seems like it may be an issue.
+
+Looking at the disassembly, it's seems highly optimized.
+
+..."optimized."
+
+/Runs gcc with -O1 flag/
+
+Oh damn, we went from ~46ns per loop when running without optimizations, down to ~2ns per loop, when compiled with the =-O1= flag. The original version of the program did not change its speed when run the same optimization flag. Huh!
+
+A follow-up thought: what if we did more work in the loop, instead of creating this =n= variable, and bit-shifting that much? Would that improve the time?
+
+Turns out, nope, no, it does not. That makes it ~20ns, instead of ~2ns.
+
+* Consider, what is stopping the compiler from making the same optimization that you did?
+
+It doesn't know that we're assuming a 2^n page size, nor a memory size divisible by such.
