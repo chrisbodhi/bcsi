@@ -1,0 +1,51 @@
+* Option 1
+
+==44== Command: ./main
+==44==
+--44-- warning: L3 cache found, using its data for the LL simulation.
+--44-- warning: specified LL cache: line_size 64  assoc 20  total_size 47,185,920
+--44-- warning: simulated LL cache: line_size 64  assoc 23  total_size 48,234,496
+starting option 1
+ending option 1
+==44==
+==44== I   refs:      224,227,138
+==44== I1  misses:          1,066
+==44== LLi misses:          1,051
+==44== I1  miss rate:        0.00%
+==44== LLi miss rate:        0.00%
+==44==
+==44== D   refs:      128,077,665  (96,057,886 rd   + 32,019,779 wr)
+==44== D1  misses:      1,003,209  (     2,539 rd   +  1,000,670 wr)
+==44== LLd misses:      1,002,699  (     2,101 rd   +  1,000,598 wr)
+==44== D1  miss rate:         0.8% (       0.0%     +        3.1%  )
+==44== LLd miss rate:         0.8% (       0.0%     +        3.1%  )
+==44==
+==44== LL refs:         1,004,275  (     3,605 rd   +  1,000,670 wr)
+==44== LL misses:       1,003,750  (     3,152 rd   +  1,000,598 wr)
+==44== LL miss rate:          0.3% (       0.0%     +        3.1%
+
+* Option 2
+
+==56== Command: ./main
+==56==
+--56-- warning: L3 cache found, using its data for the LL simulation.
+--56-- warning: specified LL cache: line_size 64  assoc 20  total_size 47,185,920
+--56-- warning: simulated LL cache: line_size 64  assoc 23  total_size 48,234,496
+starting option 2
+ending option 2
+==56==
+==56== I   refs:      224,227,138
+==56== I1  misses:          1,066
+==56== LLi misses:          1,051
+==56== I1  miss rate:        0.00%
+==56== LLi miss rate:        0.00%
+==56==
+==56== D   refs:      128,077,665  (96,057,886 rd   + 32,019,779 wr)
+==56== D1  misses:     16,003,209  (     2,539 rd   + 16,000,670 wr)
+==56== LLd misses:      1,002,699  (     2,101 rd   +  1,000,598 wr)
+==56== D1  miss rate:        12.5% (       0.0%     +       50.0%  )
+==56== LLd miss rate:         0.8% (       0.0%     +        3.1%  )
+==56==
+==56== LL refs:        16,004,275  (     3,605 rd   + 16,000,670 wr)
+==56== LL misses:       1,003,750  (     3,152 rd   +  1,000,598 wr)
+==56== LL miss rate:          0.3% (       0.0%     +        3.1%
