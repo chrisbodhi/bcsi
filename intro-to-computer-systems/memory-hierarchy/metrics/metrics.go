@@ -6,7 +6,6 @@ import (
 	"math"
 	"os"
 	"strconv"
-	"time"
 )
 
 // UserID does the thing
@@ -26,10 +25,9 @@ type DollarAmount struct {
 	cents   uint8  // was uint64
 }
 
-// Payment contains the time, too.
+// Payment contains the amount
 type Payment struct {
 	amount DollarAmount
-	time   time.Time
 }
 
 // User maps to the contents in the users.csv
@@ -112,10 +110,8 @@ func LoadData() UserMap {
 		if len(line) == 3 {
 			userID, _ := strconv.Atoi(line[2]) // No longer uses bounds-checking
 			paymentCents, _ := strconv.Atoi(line[0])
-			datetime, _ := time.Parse(time.RFC3339, line[1])
 			users[UserID(userID)].payments = append(users[UserID(userID)].payments, Payment{
 				DollarAmount{uint32(paymentCents / 100), uint8(paymentCents % 100)},
-				datetime,
 			})
 		}
 	}
