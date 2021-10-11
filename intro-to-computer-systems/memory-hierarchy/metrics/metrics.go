@@ -27,7 +27,7 @@ type DollarAmount struct {
 
 // Payment contains the amount
 type Payment struct {
-	amount DollarAmount
+	amount uint32
 }
 
 // User maps to the contents in the users.csv
@@ -35,6 +35,10 @@ type User struct {
 	age      uint      // 8 B
 	id       UserID    // 16 B
 	payments []Payment // 24 B
+}
+
+func centsConv(cents float64) float64 {
+	return cents/100 + float64(int(cents)%100/100)
 }
 
 // AverageAge calculates the average age field
@@ -48,31 +52,30 @@ func AverageAge(users UserMap) float32 {
 
 // AveragePaymentAmount calculates the average payment across all payments
 func AveragePaymentAmount(users UserMap) float64 {
-	sum := 0.0
-	count := 0
+	count, sum := 0, 0
 	for _, u := range users {
 		for _, p := range u.payments {
 			count++
-			sum += (float64(p.amount.dollars) + float64(p.amount.cents)/100)
+			sum += int(p.amount)
 		}
 	}
-
-	return sum / float64(count)
+	totalCents := float64(sum) / float64(count)
+	return centsConv(totalCents)
 }
 
 // StdDevPaymentAmount computes the standard deviation of payment amounts
 func StdDevPaymentAmount(users UserMap) float64 {
 	mean := AveragePaymentAmount(users)
-	squaredDiffs, count := 0.0, 0.0
+	squaredDiffs := 0.0
+	count := 0
 	for _, u := range users {
 		for _, p := range u.payments {
 			count++
-			amount := float64(p.amount.dollars) + float64(p.amount.cents)/100
-			diff := amount - mean
+			diff := centsConv(float64(p.amount)) - mean
 			squaredDiffs += diff * diff
 		}
 	}
-	return math.Sqrt(squaredDiffs / count)
+	return math.Sqrt(squaredDiffs / float64(count))
 }
 
 // LoadData does the thing
@@ -112,8 +115,7 @@ func LoadData() UserMap {
 			userID, _ := strconv.Atoi(line[2]) // No longer uses bounds-checking
 			paymentCents, _ := strconv.Atoi(line[0])
 			users[UserID(userID)].payments = append(users[UserID(userID)].payments, Payment{
-				DollarAmount{uint32(paymentCents / 100), uint8(paymentCents % 100)},
-			})
+				uint32(paymentCents)})
 		}
 	}
 
