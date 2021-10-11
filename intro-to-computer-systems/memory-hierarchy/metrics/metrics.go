@@ -48,15 +48,16 @@ func AverageAge(users UserMap) float32 {
 
 // AveragePaymentAmount calculates the average payment across all payments
 func AveragePaymentAmount(users UserMap) float64 {
-	average, count := 0.0, 0.0
+	sum := 0.0
+	count := 0
 	for _, u := range users {
 		for _, p := range u.payments {
 			count++
-			amount := float64(p.amount.dollars) + float64(p.amount.cents)/100
-			average += (amount - average) / count
+			sum += (float64(p.amount.dollars) + float64(p.amount.cents)/100)
 		}
 	}
-	return average
+
+	return sum / float64(count)
 }
 
 // StdDevPaymentAmount computes the standard deviation of payment amounts
