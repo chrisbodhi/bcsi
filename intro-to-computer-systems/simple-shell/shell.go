@@ -37,7 +37,7 @@ func eval(b []byte) {
 	cmd := exec.Command(userCmd, userArgs...)
 	output, err := cmd.Output()
 	if err != nil {
-		panic(err)
+		fmt.Println("I'm just a simple turtle, I don't know how to", userCmd)
 	}
 	fmt.Printf("%s", output)
 }
