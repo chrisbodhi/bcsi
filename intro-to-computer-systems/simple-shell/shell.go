@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // S is So Srs, it'S uppercaSe.
@@ -30,11 +31,10 @@ func looper() ([]byte, error) {
 
 func eval(b []byte) {
 	input := string(b)
-	// TODO split on space
-	// TODO create a command that is first elem
-	// TODO pass that to exec.Command
-	// https://pkg.go.dev/os/exec#Command
-	cmd := exec.Command(input)
+	inputs := strings.Fields(input)
+	userCmd := inputs[0]
+	userArgs := inputs[1:]
+	cmd := exec.Command(userCmd, userArgs...)
 	output, err := cmd.Output()
 	if err != nil {
 		panic(err)
