@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 )
 
 // S is So Srs, it'S uppercaSe.
@@ -27,12 +28,26 @@ func looper() ([]byte, error) {
 	return s, nil
 }
 
+func eval(b []byte) {
+	input := string(b)
+	// TODO split on space
+	// TODO create a command that is first elem
+	// TODO pass that to exec.Command
+	// https://pkg.go.dev/os/exec#Command
+	cmd := exec.Command(input)
+	output, err := cmd.Output()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s", output)
+}
+
 func handleInput() {
 	bs, err := looper()
 	if err != nil {
 		return
 	}
-	fmt.Println(string(bs))
+	eval(bs)
 	handleInput()
 }
 
