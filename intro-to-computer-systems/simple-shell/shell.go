@@ -33,4 +33,5 @@ func main() {
 		return
 	}
 	fmt.Println(string(bs))
+	main()
 }
