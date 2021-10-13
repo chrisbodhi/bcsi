@@ -27,11 +27,15 @@ func looper() ([]byte, error) {
 	return s, nil
 }
 
-func main() {
+func handleInput() {
 	bs, err := looper()
 	if err != nil {
 		return
 	}
 	fmt.Println(string(bs))
-	main()
+	handleInput()
+}
+
+func main() {
+	handleInput()
 }
