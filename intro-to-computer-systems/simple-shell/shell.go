@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
 )
 
-// S is So Srs, it'S uppercaSe.
-const S = "🐢 "
+const prompt = "🐢 "
+const interrupt = "signal: interrupt"
 
 var state = map[string]bool{
 	"continue": true,
@@ -18,7 +19,7 @@ var state = map[string]bool{
 func looper() ([]byte, error) {
 	var s []byte
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf(S)
+	fmt.Printf(prompt)
 	for {
 		b, err := reader.ReadByte()
 		if err != nil {
@@ -49,7 +50,9 @@ func callOut(userCmd string, userArgs []string) {
 	cmd := exec.Command(userCmd, userArgs...)
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Println("I'm just a simple turtle, I don't know how to", userCmd)
+		if err.Error() != interrupt {
+			fmt.Println("I'm just a simple turtle, I don't know how to", userCmd)
+		}
 	}
 	fmt.Printf("%s", output)
 }
@@ -91,5 +94,8 @@ func handleInput() {
 }
 
 func main() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	// TODO gets weird when I start the shell and then just type "exit"
 	handleInput()
 }
