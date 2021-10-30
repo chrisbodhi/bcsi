@@ -1,0 +1,20 @@
+#+TITLE: Understanding program execution in Go at a lower level
+#+CATEGORY: golang
+#+DATE: 12021-10-28
+
+* In what ways is Go assembly a "pseudo-assembly"? How is it different from something like x86-64?
+
+x86-64 is a specific assembly that maps to a specific series of hardware that relies on specific calling conventions; namely, 64-bit Intel chips.
+Go assembly, on the other hard, does not target one specific architecture with one specific set of instructions. Instead, it is portable across architectures, being ported to different targets by the go assembler.
+
+* Where does Go's assembler fit into the build pipeline?
+
+It's the part of the pipeline that takes the "pseudo-assembly" -- created from source by the compiler -- and translates it to the machine code required by the target architecture.
+
+* What details are specified by an "Application Binary Interface", and what specific decisions does the Go ABI make?
+
+For floating point numbers, a specific decision that Go's ABI makes is to present a "softfloat" mode, where the ABI assumes that there are _zero_ floating point registers. Any arguments that contain floating point numbers just go directly onto the stack. (This mode is not commonly used, but it does exist for compability's sake)
+
+* How do the two (stack-based or register-based) calling conventions handle Go's multiple return values?
+
+* Can you experimentally check (e.g. by looking at assembler output) whether a locally-compiled program uses a stack-based or register-based calling convention?
