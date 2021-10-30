@@ -1,0 +1,83 @@
+#+TITLE: Pre-work, Class 1
+
+The goal of this implementation exercise is for you to gain familiarity with the underlying representations of these basic types (hence the strange constraints).
+
+You will find it helpful to use =uintptr= and =unsafe.Pointer= (see 13.1 - 13.2 of _The Go Programming Language_). You will likely also want to consult the Go source code, especially =runtime/map.go=, which you can find at =/usr/local/go/src= or on [[https://github.com/golang/go][GitHub]].
+
+* Given a `string`, return its length (number of bytes) without using `len`.
+
+#+begin_src go :imports "fmt"
+func cb_len(s string) int {
+	var l int
+	for range []byte(s) {
+		l++
+	}
+	return l
+}
+
+func main() {
+	s := "hola muñdo"
+	fmt.Println(cb_len(s) == len(s))
+}
+#+end_src
+
+#+RESULTS:
+: true
+
+We must convert to string to a byte array to get an accurate count of bytes; otherwise, ranging over the plain string will miss the complexity related to the ñ.
+
+The underlying string representation is composed of two words: a pointer to the byte array, and a property that contains the length of the string. I wanted to get at that length, but couldn't figure out how. Similarly, ranging over the byte array starting from the pointer was a head-scratcher, especially without knowing where to end or how to iterate over addresses.
+
+* Given a `type Point struct { x int, y int }`, return its `y` coordinate without using `p.y`.
+
+#+begin_src go :imports "fmt"
+type Point struct {
+	x int
+	y int
+}
+
+var p = Point{5, 12}
+var pp = &p
+fmt.Println(pp, *pp)
+fmt.Println((*pp).y == p.y)
+#+end_src
+
+#+RESULTS:
+: &{5 12} {5 12}
+: true
+
+#+begin_quote
+Struct fields can be accessed through a struct pointer.
+
+To access the field X of a struct when we have the struct pointer p we could write (*p).X. However, that notation is cumbersome, so the language permits us instead to write just p.X, without the explicit dereference.
+#+end_quote
+
+https://tour.golang.org/moretypes/4
+
+* Given an `[]int`, return the sum of values without using `range` or `[]`.
+
+#+begin_src go :imports '("fmt" "unsafe")
+arr := []int{1,2,3}
+count := len(arr)
+word := int(unsafe.Sizeof(arr[0]))
+
+pa := &arr
+fmt.Println(pa)
+upa := unsafe.Pointer(pa)
+fmt.Printf("upa is of type %T and is %d", upa, upa)
+
+sum := 0
+// copy value at pointer to sum
+// TODO how to do this? :point_up:
+// DONE increment value at pointer by size of word
+// DONE repeat until count is exhausted
+for i := 0; i < count; i++ {
+	uaddy := unsafe.Add(_, i * word)
+	sum +=
+}
+return sum
+#+end_src
+
+#+RESULTS:
+
+* Given a `map[int]int`, return the max value, again without using `range` or `[]`.
