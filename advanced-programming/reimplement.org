@@ -6,13 +6,11 @@ You will find it helpful to use =uintptr= and =unsafe.Pointer= (see 13.1 - 13.2 
 
 * Given a `string`, return its length (number of bytes) without using `len`.
 
-#+begin_src go :imports "fmt"
+#+begin_src go :imports '("fmt" "unsafe")
 func cb_len(s string) int {
-	var l int
-	for range []byte(s) {
-		l++
-	}
-	return l
+	var i int
+	wordSize := unsafe.Sizeof(i)
+	return *(*int)(unsafe.Pointer(uintptr(unsafe.Pointer(&s)) + wordSize))
 }
 
 func main() {
@@ -24,9 +22,7 @@ func main() {
 #+RESULTS:
 : true
 
-We must convert to string to a byte array to get an accurate count of bytes; otherwise, ranging over the plain string will miss the complexity related to the ñ.
-
-The underlying string representation is composed of two words: a pointer to the byte array, and a property that contains the length of the string. I wanted to get at that length, but couldn't figure out how. Similarly, ranging over the byte array starting from the pointer was a head-scratcher, especially without knowing where to end or how to iterate over addresses.
+The underlying string representation is composed of two words: a pointer to the byte array, and a property that contains the length of the string. =uintptr= and =unsafe.Pointer= let us access the contents of memory without knowing the containing variable's name
 
 * Given a `type Point struct { x int, y int }`, return its `y` coordinate without using `p.y`.
 
@@ -38,6 +34,7 @@ type Point struct {
 
 var p = Point{5, 12}
 var pp = &p
+
 fmt.Println(pp, *pp)
 fmt.Println((*pp).y == p.y)
 #+end_src
