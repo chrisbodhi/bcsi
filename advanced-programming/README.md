@@ -18,3 +18,4 @@ Read articles and blog posts on Go assembly, to better be able to understand wha
 
 - Use `cgo` to write a Go program that calls C using Go's foreign function interface (FFI).
 - Write a Go wrapper around Google's LevelDB
+  - Step 1: `brew install leveldb` or slap that directory in `goldb`.
