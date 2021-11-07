@@ -7,6 +7,13 @@ import (
 )
 
 func main() {
-	goldb.Goldb()
-	fmt.Println("Hello, 世界")
+	fmt.Println("Getting started...")
+	db := goldb.InitDb()
+	defer goldb.CloseDb(db)
+	err := goldb.Put(db, "foo", "bar")
+	if err != nil {
+		fmt.Println(err)
+	}
+	s := goldb.Get(db, "foo")
+	fmt.Println("Hello,", s)
 }
