@@ -1,4 +1,5 @@
 # Advanced Programming
+
 ## with Go
 
 ### Pre-work 1
@@ -15,5 +16,6 @@ Read articles and blog posts on Go assembly, to better be able to understand wha
 
 ### Pre-work 5
 
-Use `cgo` to write a Go program that calls C using Go's foreign function
-interface (FFI).
+- Use `cgo` to write a Go program that calls C using Go's foreign function interface (FFI).
+- Write a Go wrapper around Google's LevelDB
+  - Step 1: `brew install leveldb` or slap that directory in `goldb`.

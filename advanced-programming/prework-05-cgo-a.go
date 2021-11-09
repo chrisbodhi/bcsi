@@ -5,7 +5,7 @@ import "C"
 
 import "fmt"
 
-func main() {
+func cgoA() {
 	n := C.int(5)
 	sq := C.square(n)
 	fmt.Println(fmt.Sprintf("%d squared is %d, which is type %T",
