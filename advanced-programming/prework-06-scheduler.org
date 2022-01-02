@@ -1,3 +1,25 @@
-When and how does the currently running goroutine pre-empted?
-What are M, P, and G?
-What are some of the performance considerations made in the Go runtime?
+#+TITLE: Scheduler
+#+DATE: 11 November 12021
+
+* When and how does the currently running goroutine [get] pre-empted?
+
+
+* What are M, P, and G?
+M: Machine (OS) thread
+P: Logical processor (there's one for every core; get the count with =runtime.NumCPU()=)
+G: Goroutine
+
+* What are some of the performance considerations made in the Go runtime?
+- The cost of context switching
+- The cost of creating a new OS thread
+- Different times to allow for context switches
+  1. Use of =go= keyword
+  2. Garbage collection
+  3. System calls
+  4. Synchronization and orchestration
+
+
+
+* Misc
+** "mechanical sympathies"
+A program or software's understanding of how the underlying hardware works, so that said program and software can operate as efficiently as allowable
