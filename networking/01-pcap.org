@@ -1,0 +1,45 @@
+#+TITLE: PCapture the Flag notes
+
+#+begin_quote
+We have recorded a packet capture of an HTTP request and response for an image, performed over an imperfect network. The challenge for you is to parse the capture file, find and parse the packets constituting the image download, and reconstruct the image!
+#+end_quote
+
+#+begin_src sh
+00000000: d4c3 b2a1 0200 0400 0000 0000 0000 0000  ................
+#+end_src
+
+First four bytes: Starts with magic number, which tells us that the host that wrote this has the opposite byte order of the host that read this; we'll be using Little Endian ordering.
+
+The =file= utility confirms this:
+
+#+begin_src sh
+➜ file net.cap
+net.cap: pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 1514)
+#+end_src
+
+Next two bytes will be =2= for the major version.
+After that, the two bytes are =4= for the minor version.
+
+Next _four_ bytes are zero, as are the four after that; they're for timezone offset and time stamp accuracy, respectively.
+
+#+begin_src sh
+00000010: ea05 0000 0100 0000 4098 d057 0a1f 0300  ........@..W....
+#+end_src
+
+This next line starts to get interesting. We get the snapshot length (=ea05=, in little-endian hex, or =1,514= in decimal (also confirmed by =file=)) and then the link-layer header type (=1=), which is for =LINKTYPE_ETHERNET=: [[https://www.tcpdump.org/linktypes.html][TCPDump docs]]
+
+In total, we're looking at _24 bytes_ for header information before we get to packets. And each one of those packets each have their own header:
+
+- Time stamp, seconds value
+- Time stamp, microseconds or nanoseconds value [in our case, we'll see microseconds, because our magic number nibbles aren't swapped]
+- Length of captured packet data
+- Un-truncated length of the packet data
+
+Each packet header takes up 16 bytes (4 bytes per field). If the latter two header fields are equal, then the packet was not truncated.
+
+
+** Utilities used
+*** xxd
+*** file
+*** strings
+*** pcap-savefile (just the =man= page so far)
