@@ -45,7 +45,7 @@ func main() {
 	checkEndian(magic)
 	fmt.Println("opened!")
 	startingPoint := int64(unsafe.Sizeof(ch))
-	sum := sumCaptured(file, startingPoint)
+	sum := countCaptured(file, startingPoint)
 	fmt.Println("summed up, got", sum)
 }
 
@@ -75,12 +75,12 @@ func allCaptured(p PacketHeader) bool {
     return p.CaptureLen == p.UntruncLen
 }
 
-func sumCaptured(file *os.File, from int64) int64 {
+func countCaptured(file *os.File, from int64) int64 {
 	var sum int64
-	return sumHelper(file, from, sum)
+	return countHelper(file, from, sum)
 }
 
-func sumHelper(file *os.File, from int64, sum int64) int64 {
+func countHelper(file *os.File, from int64, sum int64) int64 {
 	var ph PacketHeader
 	phSize := unsafe.Sizeof(ph)
 	p := PacketHeader{}
@@ -89,7 +89,7 @@ func sumHelper(file *os.File, from int64, sum int64) int64 {
 	phBytes, err := readNextBytes(file, phSize, from)
 
 	if err != nil {
-		log.Println("Done with sumHelper", err)
+		log.Println("Done with countHelper", err)
 		return sum
 	}
 	
@@ -102,7 +102,7 @@ func sumHelper(file *os.File, from int64, sum int64) int64 {
 	
 	if allCaptured(p) {
 		capLen := int64(p.CaptureLen)
-		return sumHelper(file, from + int64(phSize) + capLen, sum + 1)
+		return countHelper(file, from + int64(phSize) + capLen, sum + 1)
 	} else {
 		log.Println("Bytes truncated")
 		return sum
