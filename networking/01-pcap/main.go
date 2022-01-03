@@ -45,8 +45,7 @@ func main() {
 	checkEndian(magic)
 	fmt.Println("opened!")
 	startingPoint := int64(unsafe.Sizeof(ch))
-	sum := countCaptured(file, startingPoint)
-	fmt.Println("summed up, got", sum)
+	checkCount(countCaptured(file, startingPoint))
 }
 
 func readNextBytes(file *os.File, number uintptr, offset int64) ([]byte, error) {
@@ -80,6 +79,9 @@ func countCaptured(file *os.File, from int64) int64 {
 	return countHelper(file, from, sum)
 }
 
+// TODO Verify that all the IP datagrams have the same format, eg 0800
+const IPV4 = "0800"
+
 func countHelper(file *os.File, from int64, sum int64) int64 {
 	var ph PacketHeader
 	phSize := unsafe.Sizeof(ph)
@@ -108,4 +110,11 @@ func countHelper(file *os.File, from int64, sum int64) int64 {
 		return sum
 	}
 
+}
+
+func checkCount(count int64) {
+	given := int64(99)
+	if count != given {
+		log.Fatal("Wrong number of packets parsed: ", count)
+	}
 }
