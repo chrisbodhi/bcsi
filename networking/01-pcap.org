@@ -1,0 +1,81 @@
+#+TITLE: PCapture the Flag notes
+
+#+begin_quote
+We have recorded a packet capture of an HTTP request and response for an image, performed over an imperfect network. The challenge for you is to parse the capture file, find and parse the packets constituting the image download, and reconstruct the image!
+#+end_quote
+
+** TCPdumped
+
+#+begin_src sh
+00000000: d4c3 b2a1 0200 0400 0000 0000 0000 0000  ................
+#+end_src
+
+First four bytes: Starts with magic number, which tells us that the host that wrote this has the opposite byte order of the host that read this; we'll be using Little Endian ordering.
+
+The =file= utility confirms this:
+
+#+begin_src sh
+➜ file net.cap
+net.cap: pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 1514)
+#+end_src
+
+Next two bytes will be =2= for the major version.
+After that, the two bytes are =4= for the minor version.
+
+Next _four_ bytes are zero, as are the four after that; they're for timezone offset and time stamp accuracy, respectively.
+
+#+begin_src sh
+00000010: ea05 0000 0100 0000 4098 d057 0a1f 0300  ........@..W....
+#+end_src
+
+This next line starts to get interesting. We get the snapshot length (=ea05=, in little-endian hex, or =1,514= in decimal (also confirmed by =file=)) and then the link-layer header type (=01=), which is for =LINKTYPE_ETHERNET=: [[https://www.tcpdump.org/linktypes.html][TCPDump docs]]
+
+In total, we're looking at _24 bytes_ for header information before we get to packets. And each one of those packets each have their own header:
+
+- Time stamp, seconds value
+- Time stamp, microseconds or nanoseconds value [in our case, we'll see microseconds, because our magic number nibbles aren't swapped]
+- Length of captured packet data
+- Un-truncated length of the packet data
+
+Each packet header takes up _16 bytes_ (4 bytes per field). If the latter two header fields are equal, then the packet was not truncated.
+
+#+begin_src sh
+00000020: 4e00 0000 4e00 0000 c4e9 8487 6028 a45e  N...N.......`(.^
+#+end_src
+
+In this case, =4e00 0000= equals =4e00 0000=; our captured packet is complete.
+
+** Ethernet frames :ATTACH:
+:PROPERTIES:
+:ID:       b0d8afd8-a842-4b3b-a7e0-95f3f6d21621
+:END:
+
+Due to the limitations in the OS on revealing all possible information about the ethernet frames' headers, we have not captured the _preamble_, _start frame delimiter (SFD)_, or _frame check sequence (FCS)_. The [[https://en.wikipedia.org/wiki/Ethernet_frame#Preamble_and_start_frame_delimiter][first two]] would be at the start of the captured data; the last, at the very end:
+
+
+[[attachment:_20220103_143445screenshot.png]]
+
+So, we're starting with the destination MAC address (6 bytes), the source MAC address (6 bytes), and the EtherType (2 bytes); for a total of _14 bytes_ before we get to the payload (46-1500 bytes).
+
+Picking up from the previous section, we start parsing from =c4e9=.
+
+
+#+begin_src sh
+00000020: 4e00 0000 4e00 0000 c4e9 8487 6028 a45e  N...N.......`(.^
+00000030: 60df 2e1b 0800 4500 0040 d003 0000 4006  `.....E..@....@.
+#+end_src
+
+| What it is              | Little-Endian bytes |
+|-------------------------+---------------------|
+| Destination MAC address | =c4e9 8487 6028=    |
+| Source MAC address      | =a45e 60df 2e1b=    |
+| EtherType               | =0800=              |
+| Payload                 | =4500 ...=          |
+
+Since the =EtherType= field is =0800=, we know that IPv4 was used to capture the data.
+
+*** Utilities used
+**** xxd
+**** file
+**** strings
+**** pcap-savefile (just the =man= page so far)
