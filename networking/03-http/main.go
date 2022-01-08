@@ -13,9 +13,11 @@ import (
 	"net"
 )
 
-// 1. Write a program which accepts a TCP connection and
-//	  simply responds with whatever it reads
-// 		listne, accept, recv, send
+// [√] 1. Write a program which accepts a TCP connection and
+//	      simply responds with whatever it reads
+// 			listen, accept, recv, send
+// [ ] 2. Write a program that simply listens on a port and
+//			forwards on to another server running locally (nc)
 
 // listen
 func listenTCP(address string, port int) (net.Listener, error) {
