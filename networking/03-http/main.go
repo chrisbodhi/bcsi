@@ -23,31 +23,25 @@ func listenTCP(address string, port int) (net.Listener, error) {
 }
 
 // recv
-func recv(conn net.Conn) (int, error) {
+func recv(conn net.Conn) {
 	fmt.Println("Connection received over", conn.LocalAddr().Network())
 
 	buffer := make([]byte, 1024)
 	_, err := conn.Read(buffer)
 
 	if err != nil {
-		fmt.Println("Cannot read: ", err)
-		conn.Close()
-		return 0, err
+		log.Fatal("Cannot read: ", err)
 	}
 
 	// send
-	length, err := conn.Write(buffer)
+	_, err = conn.Write(buffer)
 
 	if err != nil {
-		fmt.Println("Cannot write: ", err)
-		conn.Close()
-		return 0, err
+		log.Fatal("Cannot write: ", err)
 	}
 
 	fmt.Println("They said,", string(buffer))
 	conn.Close()
-
-	return length, nil
 }
 
 func main() {
@@ -65,9 +59,6 @@ func main() {
 			log.Fatal("cannot accept: ", err)
 		}
 
-		_, err = recv(conn)
-		if err != nil {
-			log.Fatal("cannot receive: ", err)
-		}
+		go recv(conn)
 	}
 }
