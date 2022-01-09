@@ -16,8 +16,10 @@ import (
 // [√] 1. Write a program which accepts a TCP connection and
 //	      simply responds with whatever it reads
 // 			listen, accept, recv, send
-// [ ] 2. Write a program that simply listens on a port and
+// [x] 2. Write a program that simply listens on a port and
 //			forwards on to another server running locally (nc)
+// 			my program: port 6666 (which is where I'll send the req)
+//			other program: port 7777 (which is where I'll fwd the req)
 
 // listen
 func listenTCP(address string, port int) (net.Listener, error) {
@@ -37,6 +39,7 @@ func recv(conn net.Conn) {
 
 	// send
 	_, err = conn.Write(buffer)
+	fwd(buffer)
 
 	if err != nil {
 		log.Fatal("Cannot write: ", err)
@@ -44,6 +47,22 @@ func recv(conn net.Conn) {
 
 	fmt.Println("They said,", string(buffer))
 	conn.Close()
+}
+
+func fwd(msg []byte) {
+	// create connection to 7777
+	conn, err := net.Dial("tcp", "127.0.0.1:7777")
+	if err != nil {
+		log.Fatal("cannot connect to 7777: ", err)
+	}
+	// close connection when done
+	defer conn.Close()
+
+	// send msg
+	_, err = conn.Write(msg)
+	if err != nil {
+		log.Fatal("cannot write to 7777: ", err)
+	}
 }
 
 func main() {
