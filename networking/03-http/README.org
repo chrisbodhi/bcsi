@@ -3,5 +3,5 @@
 ** Pre-work
 *** Running
 1. Start the server with =go run main.go=.
-2. In a seperate tab, use =netcat= to interact with the server: =nc 127.0.0.1 6666=
+2. In a seperate tab, use =netcat= to interact with the server: =nc 127.0.0.1 9000=
 3. To listen to forwarded messages, again use =netcat= after the server is running: =nc -l 127.0.0.1 7777=

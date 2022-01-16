@@ -7,13 +7,14 @@ package main
 // of their own web servers, caching a narrower set
 // of websites but in service of an unlimited amount of clients.
 
-// client --> me (6666) --> server (7777)
-// client <-- me (6666) <-- server (7777)
+// client --> me (9000) --> server (7777)
+// client <-- me (9000) <-- server (7777)
 
 import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 )
 
 // [√] 1. Write a program which accepts a TCP connection and
@@ -21,12 +22,12 @@ import (
 // 			listen, accept, recv, send
 // [x] 2. Write a program that simply listens on a port and
 //			forwards on to another server running locally (nc)
-// 			my program: port 6666 (which is where I'll send the req)
+// 			my program: port 9000 (which is where I'll send the req)
 //			other program: port 7777 (which is where I'll fwd the req)
 // [ ] 3. Handle a complete request and response
 
 func main() {
-	listener, err := listenTCP("127.0.0.1", 6666)
+	listener, err := listenTCP("127.0.0.1", 9000)
 	if err != nil {
 		log.Fatal("cannot listen: ", err)
 	}
@@ -66,7 +67,9 @@ func recv(conn net.Conn) {
 		log.Fatal("Did not get response: ", err)
 	}
 	fmt.Println("Writing response to client\n", string(res))
-	_, err = conn.Write(res)
+	// TODO get length of res?
+	trimTo := calcHeaderLen(res)
+	_, err = conn.Write(res[:trimTo])
 
 	if err != nil {
 		log.Fatal("Cannot write: ", err)
@@ -77,17 +80,15 @@ func recv(conn net.Conn) {
 
 func fwd(msg []byte) ([]byte, error) {
 	// create connection to 7777: me --> server
-	conn, err := net.Dial("tcp", "127.0.0.1:7777")
+	serverConn, err := net.Dial("tcp", "127.0.0.1:7777")
 	if err != nil {
 		log.Fatal("cannot connect to 7777: ", err)
 	}
 	// close connection when done
-	defer conn.Close()
+	defer serverConn.Close()
 
-	// send msg to client: me --> client
-	_, err = conn.Write(msg)
-	//	resLen := (86*3)-61 // hardcoded for curl
-	resLen := 1 << 10
+	// send msg received from client over to server
+	_, err = serverConn.Write(msg)
 
 	// TODO new method of creating the correctly-sized buffer
 	// 		otherwise, sending too much causes curl to show an error message
@@ -95,14 +96,42 @@ func fwd(msg []byte) ([]byte, error) {
 	//		(and maybe the browsers to silently fail)
 
 	// TODO consult the HTTP spec
-	// create interface struct for Read to populate
-	// There's gonna be some shit in there, let me tell you.
-	res := make([]byte, resLen)
-	_, err = conn.Read(res)
+	// get len of res from start to the first empty line: this will be the end of the headers and the start of the body (of which there will be none in the GET request)
+
+	res := make([]byte, 1<<10)
+	_, err = serverConn.Read(res)
 
 	if err != nil {
 		log.Fatal("cannot write to 7777: ", err)
 	}
 
 	return res, nil
+}
+
+// TODO we don't want the length of the headers, we want
+//		the size of the body -- which contains the headers
+//		in JSON form
+func calcHeaderLen(res []byte) int {
+	str := string(res)
+	stSp := strings.Split(str, "\n")
+	totalLen := len("HTTP/1.0 200 OK\n")
+
+	for i, s := range stSp {
+		fmt.Printf("line %d | len %d | contents %s\n", i, len(s), s)
+		// Skip the first line, which isn't a header
+		if i == 0 {
+			continue
+		}
+		// Empty new line, which seperates headers from body.
+		// We just want the headers, so stop counting here.
+		if len(s) == 1 {
+			break
+		}
+
+		if len(s) > 0 {
+			totalLen += len(s)
+		}
+	}
+
+	return totalLen
 }
