@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type DB interface {
 	// Get gets the value for the given key. It returns an error if the
@@ -22,6 +25,28 @@ type DB interface {
 	RangeScan(start, limit []byte) (Iterator, error)
 }
 
+type LvlUp struct {
+	ds map[string][]byte
+}
+
+func (l *LvlUp) Put(key, value []byte) error {
+	// TODO what are the conditions that would cause an error?
+	if l.ds == nil {
+		return errors.New("no data store available")
+	}
+	l.ds[string(key)] = value
+
+	return nil
+}
+
+func (l *LvlUp) Get(key []byte) ([]byte, error) {
+	val, ok := l.ds[string(key)]
+	if ok {
+		return val, nil
+	}
+	return nil, fmt.Errorf("cannot get %s", string(key))
+}
+
 type Iterator interface {
 	// Next moves the iterator to the next key/value pair.
 	// It returns false if the iterator is exhausted.
@@ -39,5 +64,5 @@ type Iterator interface {
 }
 
 func main() {
-	fmt.Println("Level out")
+	fmt.Println("lfg")
 }
