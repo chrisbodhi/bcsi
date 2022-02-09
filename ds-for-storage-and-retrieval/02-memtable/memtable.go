@@ -45,10 +45,10 @@ func (l *LvlUp) Delete(key []byte) error {
 	return fmt.Errorf("%s not present", string(key))
 }
 
-// func (l *LvlUp) RangeScan(start, limit []byte) (Iterator, error) {
-// 	i := Iter{start, limit}
-// 	return i, nil
-// }
+func (l *LvlUp) RangeScan(start, limit []byte) (Iterator, error) {
+	i := &Iter{[][]byte{}, [][]byte{}, 0}
+	return i, nil
+}
 
 type Iter struct {
 	keys   [][]byte
@@ -56,18 +56,43 @@ type Iter struct {
 	index  int
 }
 
-func (i Iter) Next() bool {
+func (i *Iter) Next() bool {
+	l := len(i.keys)
+	nextIndex := i.index + 1
+
+	if nextIndex >= l {
+		return false
+	}
+
+	i.index = nextIndex
 	return true
 }
 
-func (i Iter) Error() error {
+// Error returns any accumulated error. Exhausting all the key/value pairs
+// is not considered to be an error.
+func (i *Iter) Error() error {
+	// TODO
 	return nil
 }
 
-func (i Iter) Key() []byte {
-	return nil
+func (i *Iter) Key() []byte {
+	ind := i.index
+	keys := i.keys
+
+	if len(keys) >= ind {
+		return nil
+	}
+
+	return keys[ind]
 }
 
-func (i Iter) Value() []byte {
-	return nil
+func (i *Iter) Value() []byte {
+	ind := i.index
+	values := i.values
+
+	if len(values) >= ind {
+		return nil
+	}
+
+	return values[ind]
 }
