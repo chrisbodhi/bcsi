@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 )
 
 type DB interface {
@@ -39,12 +40,31 @@ func (l *LvlUp) Put(key, value []byte) error {
 	return nil
 }
 
+func (l *LvlUp) Has(key []byte) (bool, error) {
+	// TODO what are the conditions that would cause an error?
+	if l.ds == nil {
+		return false, errors.New("no data store available")
+	}
+	_, ok := l.ds[string(key)]
+
+	return ok, nil
+}
+
 func (l *LvlUp) Get(key []byte) ([]byte, error) {
 	val, ok := l.ds[string(key)]
 	if ok {
 		return val, nil
 	}
 	return nil, fmt.Errorf("cannot get %s", string(key))
+}
+
+func (l *LvlUp) Delete(key []byte) error {
+	if ok, _ := l.Has(key); ok {
+		// TODO actually delete
+		return nil
+	} else {
+		return fmt.Errorf("%s not present", string(key))
+	}
 }
 
 type Iterator interface {
@@ -64,5 +84,18 @@ type Iterator interface {
 }
 
 func main() {
-	fmt.Println("lfg")
+	var l LvlUp
+	l.ds = make(map[string][]byte)
+
+	k := []byte{'d', 'o'}
+	v := []byte{'d', 'o', 'p', 'e'}
+
+	l.Put(k, v)
+	do, err := l.Get(k)
+
+	if err != nil {
+		log.Fatal("dammit", err)
+	}
+
+	fmt.Println("do", string(do), "fuck hope")
 }
