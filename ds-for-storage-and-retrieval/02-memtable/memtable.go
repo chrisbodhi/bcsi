@@ -47,6 +47,9 @@ func (l *LvlUp) Delete(key []byte) error {
 
 func (l *LvlUp) RangeScan(start, limit []byte) (Iterator, error) {
 	i := &Iter{[][]byte{}, [][]byte{}, 0}
+	// range over l.ds, starting from start, until
+	// counter is >= current key
+	// TODO write a helper to compare byte arrays
 	return i, nil
 }
 
