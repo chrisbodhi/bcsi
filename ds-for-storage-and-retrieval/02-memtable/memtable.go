@@ -1,8 +1,10 @@
 package memtable
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"sort"
 )
 
 type LvlUp struct {
@@ -46,28 +48,37 @@ func (l *LvlUp) Delete(key []byte) error {
 }
 
 func (l *LvlUp) RangeScan(start, limit []byte) (Iterator, error) {
-	i := &Iter{[][]byte{}, [][]byte{}, 0}
-	// range over l.ds, starting from start, until
-	// counter is >= current key
-	// TODO write a helper to compare byte arrays
+	i := &Iter{map[string][]byte{}, []string{}, 0}
+
+	for k, v := range l.ds {
+		kb := []byte(k)
+		// start: inclusive
+		// limit: exclusive
+		if bytes.Compare(start, kb) <= 0 && bytes.Compare(kb, limit) == -1 {
+			i.Pairs[k] = v
+			i.Keys = append(i.Keys, k)
+		}
+	}
+
+	sort.Strings(i.Keys)
+
 	return i, nil
 }
 
 type Iter struct {
-	keys   [][]byte
-	values [][]byte
-	index  int
+	Pairs map[string][]byte
+	Keys []string
+	Index  int
 }
 
 func (i *Iter) Next() bool {
-	l := len(i.keys)
-	nextIndex := i.index + 1
+	keysLen := len(i.Keys)
 
-	if nextIndex >= l {
+	if i.Index == keysLen {
 		return false
 	}
 
-	i.index = nextIndex
+	i.Index += 1
 	return true
 }
 
@@ -79,23 +90,23 @@ func (i *Iter) Error() error {
 }
 
 func (i *Iter) Key() []byte {
-	ind := i.index
-	keys := i.keys
+	ind := i.Index
+	keys := i.Keys
 
-	if len(keys) >= ind {
+	if ind >= len(keys) {
 		return nil
 	}
 
-	return keys[ind]
+	return []byte(keys[ind])
 }
 
 func (i *Iter) Value() []byte {
-	ind := i.index
-	values := i.values
+	ind := i.Index
+	keys := i.Keys
 
-	if len(values) >= ind {
+	if ind >= len(i.Pairs) {
 		return nil
 	}
 
-	return values[ind]
+	return i.Pairs[keys[ind]]
 }
