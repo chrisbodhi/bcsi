@@ -2,8 +2,11 @@ package memtable
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
+
+// Tests
 
 func TestGet(t *testing.T) {
 	var l LvlUp
@@ -121,5 +124,34 @@ func TestRangeScanComplex(t *testing.T) {
 
 	if noVal := iter.Value(); noVal != nil {
 		t.Fatalf("Should have failed, but we got %c", noVal)
+	}
+}
+
+// Benchmarks
+// ➜ go test -run=XXX -bench .
+// goos: darwin
+// goarch: amd64
+// pkg: github.com/chrisbodhi/bcsi/ds-for-storage-and-retrieval/memtable
+// cpu: Intel(R) Core(TM) i5-5257U CPU @ 2.70GHz
+// BenchmarkPut-4        	 1640446	       661.6 ns/op
+// BenchmarkPutFixed-4   	42205840	        26.41 ns/op
+// PASS
+// ok  	github.com/chrisbodhi/bcsi/ds-for-storage-and-retrieval/memtable	4.302s
+
+func BenchmarkPut(b *testing.B) {
+	var l LvlUp
+	l.ds = make(map[string][]byte)
+
+	for i := 0; i < b.N; i++ {
+		l.ds[fmt.Sprint(i)] = []byte(fmt.Sprint(i + 1))
+	}
+}
+
+func BenchmarkPutFixed(b *testing.B) {
+	var l LvlUp
+	l.ds = make(map[string][]byte)
+
+	for i := 0; i < b.N; i++ {
+		l.ds["A"] = []byte("AA")
 	}
 }
