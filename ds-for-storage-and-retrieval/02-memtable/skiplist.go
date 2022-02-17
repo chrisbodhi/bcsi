@@ -20,13 +20,14 @@ type Node struct {
 	Forward [](*Node) // len(Forward) is this node's level: "A node that has k forward pointers is called a level k node."
 	Key     []byte
 	Value   []byte
-	// Level	int // the paper says we don't need to store the level of the node in the node (p. 1)
+	// Level	int	  // the paper says we don't need to store the level of the node in the node (p. 1)
 }
 
 func (list *List) Search(searchKey []byte) ([]byte, bool) {
 	x := list.Header
 	for i := list.Level; i >= 0; i-- {
-		for bytes.Compare(x.Forward[i].Key, searchKey) == -1 {
+		for len(x.Forward) > 0 && bytes.Compare(x.Forward[i].Key, searchKey) == -1 {
+			fmt.Println(x, x.Forward[i])
 			x = x.Forward[i]
 		}
 	}
@@ -41,7 +42,6 @@ func (list *List) Search(searchKey []byte) ([]byte, bool) {
 
 func (list *List) Insert(searchKey, newValue []byte) {
 	var update [MaxLevel](*Node)
-	fmt.Printf("Search key at start of insert: %s\n", searchKey)
 
 	x := list.Header
 	for i := list.Level; i >= 0; i-- {
@@ -53,6 +53,7 @@ func (list *List) Insert(searchKey, newValue []byte) {
 
 	x = x.Forward[0]
 	if bytes.Equal(x.Key, searchKey) {
+		// Update the value for searchKey; it's alredy in the skip list
 		x.Value = newValue
 	} else {
 		lvl := randomLevel()
@@ -63,8 +64,8 @@ func (list *List) Insert(searchKey, newValue []byte) {
 			list.Level = lvl
 		}
 		x = makeNode(lvl, searchKey, newValue) // newValue is written just as "value" in the paper -- this is a guess
-		for i := 0; i < list.Level; i++ {      // list.Level is written just as "level" in the paper -- this is a guess
-			fmt.Println("len x fwd:", len(x.Forward), "update:", update[i].Forward)
+		for i := 0; i < len(x.Forward); i++ {  // list.Level is written just as "level" in the paper -- this is a guess
+			// x.Forward[i] is what keeps running out
 			x.Forward[i] = update[i].Forward[i]
 			update[i].Forward[i] = x
 		}
@@ -98,7 +99,7 @@ func (list *List) Insert(searchKey, newValue []byte) {
 
 func randomLevel() int {
 	lvl := 0
-	for rand.Float32() < p && lvl < MaxLevel {
+	for rand.Float32() > p && lvl < MaxLevel {
 		lvl += 1
 	}
 	return lvl
@@ -123,7 +124,6 @@ func BuildForwardList(lvl int) [](*Node) {
 	for i := 1; i < lvl; i++ {
 		fwdList = append(fwdList, &Node{})
 	}
-	fmt.Println("lvl", lvl, "fwdList", len(fwdList))
 
 	return fwdList
 }
