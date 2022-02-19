@@ -73,3 +73,21 @@ func TestSearch(t *testing.T) {
 		t.Fatalf("wtf? %s", val)
 	}
 }
+
+func TestDelete(t *testing.T) {
+	fwd := BuildForwardList(1)
+	header := &Node{fwd, nil, nil}
+	l := List{header, 1}
+
+	l.Insert([]byte("abc"), []byte("123"))
+	l.Insert([]byte("def"), []byte("456"))
+	l.Insert([]byte("ghi"), []byte("789"))
+
+	l.Delete([]byte("def"))
+
+	val, ok := l.Search([]byte("def"))
+	if ok {
+		t.Fatalf("We got back %c, when we were expecting nada", val)
+	}
+
+}

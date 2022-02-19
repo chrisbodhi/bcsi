@@ -75,29 +75,32 @@ func (list *List) Insert(searchKey, newValue []byte) {
 	}
 }
 
-// func (list *List) Delete(searchKey []byte) {
-// 	var update [MaxLevel](*Node)
+func (list *List) Delete(searchKey []byte) {
+	var update [MaxLevel](*Node)
 
-// 	x := list.Header
-// 	for i := list.Level; i >= 0; i-- {
-// 		for bytes.Compare(x.Forward[i].Key, searchKey) == -1 {
-// 			x = x.Forward[i]
-// 		}
-// 		update[i] = x
-// 	}
-// 	x = x.Forward[0] // DONE update from 1 to 0 (17 Feb)
-// 	if bytes.Equal(x.Key, searchKey) {
-// 		for i := 1; i <= list.Level; i++ {
-// 			if !areEqual(update[i].Forward[i], x) {
-// 				break
-// 			}
-// 			update[i].Forward[i] = x.Forward[i]
-// 		}
-// 		for list.Level > 0 && isEmpty(list.Header.Forward[list.Level]) {
-// 			list.Level -= 1
-// 		}
-// 	}
-// }
+	x := list.Header
+
+	for i := (list.Level - 1); i >= 0; i-- {
+		for bytes.Compare(x.Forward[i].Key, searchKey) == -1 {
+			x = x.Forward[i]
+		}
+		update[i] = x
+	}
+
+	x = x.Forward[0]
+
+	if bytes.Equal(x.Key, searchKey) {
+		for i := 0; i < list.Level; i++ {
+			if !areEqual(update[i].Forward[i], x) {
+				break
+			}
+			update[i].Forward[i] = x.Forward[i]
+		}
+		for list.Level > 0 && isEmpty(list.Header.Forward[list.Level - 1]) {
+			list.Level -= 1
+		}
+	}
+}
 
 func randomLevel() int {
 	lvl := 0
@@ -112,11 +115,11 @@ func makeNode(lvl int, searchKey, value []byte) *Node {
 	return &Node{Forward: fwdList, Key: searchKey, Value: value}
 }
 
-func areEqual(a, b Node) bool {
+func areEqual(a, b *Node) bool {
 	return bytes.Equal(a.Key, b.Key) && bytes.Equal(a.Value, b.Value)
 }
 
-func isEmpty(n Node) bool {
+func isEmpty(n *Node) bool {
 	return len(n.Forward) == 0 && len(n.Key) == 0 && len(n.Value) == 0
 }
 
