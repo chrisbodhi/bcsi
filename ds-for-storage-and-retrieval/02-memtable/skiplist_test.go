@@ -13,11 +13,6 @@ func TestBuildForwardList(t *testing.T) {
 	}
 }
 
-// use TestInsert to test updating a node
-// insert("abc", "123")
-// insert("abc", "456")
-// get("abc") == "456"
-
 func TestInsert(t *testing.T) {
 	fwd := BuildForwardList(1)
 	header := &Node{fwd, nil, nil}
@@ -33,9 +28,20 @@ func TestInsert(t *testing.T) {
 
 	val, ok := l.Search([]byte("def"))
 	if !ok {
-		t.Fatalf("Did not retrieve %s, but instead %s.", []byte("789"), val)
+		t.Fatalf("Did not retrieve %s, but instead %s.", []byte("456"), val)
 	}
 	if !bytes.Equal([]byte("456"), val) {
+		t.Fatalf("wtf? %s", val)
+	}
+
+	// test updating
+	l.Insert([]byte("def"), []byte("789"))
+
+	val, ok = l.Search([]byte("def"))
+	if !ok {
+		t.Fatalf("Did not retrieve %s, but instead %s.", []byte("789"), val)
+	}
+	if !bytes.Equal([]byte("789"), val) {
 		t.Fatalf("wtf? %s", val)
 	}
 }
