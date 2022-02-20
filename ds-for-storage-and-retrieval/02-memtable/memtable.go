@@ -1,10 +1,10 @@
 package memtable
 
 import (
-	// "bytes"
+	"bytes"
 	"errors"
 	"fmt"
-	// "sort"
+	"sort"
 )
 
 type LvlUp struct {
@@ -47,23 +47,26 @@ func (l *LvlUp) Delete(key []byte) error {
 	return fmt.Errorf("%s not present", string(key))
 }
 
-// func (l *LvlUp) RangeScan(start, limit []byte) (Iterator, error) {
-// 	i := &Iter{map[string][]byte{}, []string{}, 0}
+func (l *LvlUp) RangeScan(start, limit []byte) (Iterator, error) {
+	i := &Iter{map[string][]byte{}, []string{}, 0}
 
-// 	for k, v := range l.ds {
-// 		kb := []byte(k)
-// 		// start: inclusive
-// 		// limit: exclusive
-// 		if bytes.Compare(start, kb) <= 0 && bytes.Compare(kb, limit) == -1 {
-// 			i.Pairs[k] = v
-// 			i.Keys = append(i.Keys, k)
-// 		}
-// 	}
+	// TODO this is not what I want to actually range over;
+	//		it misses the rest of the list
+	for _, n := range l.ds.Header.Forward {
+		k := n.Key
+		fmt.Println(k)
+		// start: inclusive
+		// limit: exclusive
+		if bytes.Compare(start, k) <= 0 && bytes.Compare(k, limit) == -1 {
+			i.Pairs[string(k)] = n.Value
+			i.Keys = append(i.Keys, string(k))
+		}
+	}
 
-// 	sort.Strings(i.Keys)
+	sort.Strings(i.Keys)
 
-// 	return i, nil
-// }
+	return i, nil
+}
 
 type Iter struct {
 	Pairs map[string][]byte
@@ -103,6 +106,8 @@ func (i *Iter) Key() []byte {
 func (i *Iter) Value() []byte {
 	ind := i.Index
 	keys := i.Keys
+
+	fmt.Println("ind", ind, "keys", keys)
 
 	if ind >= len(i.Pairs) {
 		return nil

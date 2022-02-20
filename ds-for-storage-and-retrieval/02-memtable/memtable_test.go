@@ -35,42 +35,47 @@ func TestGet(t *testing.T) {
 	}
 }
 
-// func TestRangeScanSimple(t *testing.T) {
-// 	var l LvlUp
-// 	l.ds = make(map[string][]byte)
+func TestRangeScanSimple(t *testing.T) {
+	var l LvlUp
+	list, err := Init()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-// 	for i := 'A'; i <= 'Z'; i++ {
-// 		l.ds[string(i)] = []byte{valFromKey(byte(i))}
-// 	}
+	l.ds = list
 
-// 	start := []byte("B") // inclusive
-// 	limit := []byte("E") // exclusive
-// 	iter, err := l.RangeScan(start, limit)
+	for i := 'A'; i <= 'Z'; i++ {
+		l.Put([]byte{byte(i)}, []byte{valFromKey(byte(i))})
+	}
 
-// 	if err != nil {
-// 		t.Fatalf("RangeScan err: %s\n", err)
-// 	}
+	start := []byte("B") // inclusive
+	limit := []byte("E") // exclusive
+	iter, err := l.RangeScan(start, limit)
 
-// 	firstValue := iter.Value()
+	if err != nil {
+		t.Fatalf("RangeScan err: %s\n", err)
+	}
 
-// 	if firstValue[0] != valFromKey(start[0]) {
-// 		t.Fatalf("First value was not %c, it was %c.\n", valFromKey(start[0]), firstValue[0])
-// 	}
+	firstValue := iter.Value()
 
-// 	iter.Next() // 'C': 'C' + 5 = 'H'
-// 	iter.Next() // 'D': 'D' + 5 = 'I'
+	if firstValue[0] != valFromKey(start[0]) {
+		t.Fatalf("First value was not %c, it was %c.\n", valFromKey(start[0]), firstValue[0])
+	}
 
-// 	lastValue := iter.Value()
+	iter.Next() // 'C': 'C' + 5 = 'H'
+	iter.Next() // 'D': 'D' + 5 = 'I'
 
-// 	// Minus 1 because exclusive
-// 	if lastValue[0] != valFromKey(limit[0]-1) {
-// 		t.Fatalf("Last value was not %c, it was %c.\n", valFromKey(limit[0]-1), lastValue[0])
-// 	}
-// }
+	lastValue := iter.Value()
 
-// func valFromKey(key byte) byte {
-// 	return key + 5
-// }
+	// Minus 1 because exclusive
+	if lastValue[0] != valFromKey(limit[0]-1) {
+		t.Fatalf("Last value was not %c, it was %c.\n", valFromKey(limit[0]-1), lastValue[0])
+	}
+}
+
+func valFromKey(key byte) byte {
+	return key + 5
+}
 
 // func TestRangeScanComplex(t *testing.T) {
 // 	var l LvlUp
