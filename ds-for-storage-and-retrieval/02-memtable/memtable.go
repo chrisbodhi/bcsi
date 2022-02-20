@@ -1,38 +1,38 @@
 package memtable
 
 import (
-	"bytes"
+	// "bytes"
 	"errors"
 	"fmt"
-	"sort"
+	// "sort"
 )
 
 type LvlUp struct {
-	ds map[string][]byte
+	ds List
 }
 
 func (l *LvlUp) Put(key, value []byte) error {
 	// TODO what are all of the conditions that would cause an error?
-	if l.ds == nil {
+	if l.ds.Header == nil {
 		return errors.New("no data store available")
 	}
-	l.ds[string(key)] = value
+	l.ds.Insert(key, value)
 
 	return nil
 }
 
 func (l *LvlUp) Has(key []byte) (bool, error) {
 	// TODO what are all of the conditions that would cause an error?
-	if l.ds == nil {
+	if l.ds.Header == nil {
 		return false, errors.New("no data store available")
 	}
-	_, ok := l.ds[string(key)]
+	_, ok := l.ds.Search(key)
 
 	return ok, nil
 }
 
 func (l *LvlUp) Get(key []byte) ([]byte, error) {
-	val, ok := l.ds[string(key)]
+	val, ok := l.ds.Search(key)
 	if ok {
 		return val, nil
 	}
@@ -41,29 +41,29 @@ func (l *LvlUp) Get(key []byte) ([]byte, error) {
 
 func (l *LvlUp) Delete(key []byte) error {
 	if ok, _ := l.Has(key); ok {
-		delete(l.ds, string(key))
+		l.ds.Delete(key)
 		return nil
 	}
 	return fmt.Errorf("%s not present", string(key))
 }
 
-func (l *LvlUp) RangeScan(start, limit []byte) (Iterator, error) {
-	i := &Iter{map[string][]byte{}, []string{}, 0}
+// func (l *LvlUp) RangeScan(start, limit []byte) (Iterator, error) {
+// 	i := &Iter{map[string][]byte{}, []string{}, 0}
 
-	for k, v := range l.ds {
-		kb := []byte(k)
-		// start: inclusive
-		// limit: exclusive
-		if bytes.Compare(start, kb) <= 0 && bytes.Compare(kb, limit) == -1 {
-			i.Pairs[k] = v
-			i.Keys = append(i.Keys, k)
-		}
-	}
+// 	for k, v := range l.ds {
+// 		kb := []byte(k)
+// 		// start: inclusive
+// 		// limit: exclusive
+// 		if bytes.Compare(start, kb) <= 0 && bytes.Compare(kb, limit) == -1 {
+// 			i.Pairs[k] = v
+// 			i.Keys = append(i.Keys, k)
+// 		}
+// 	}
 
-	sort.Strings(i.Keys)
+// 	sort.Strings(i.Keys)
 
-	return i, nil
-}
+// 	return i, nil
+// }
 
 type Iter struct {
 	Pairs map[string][]byte

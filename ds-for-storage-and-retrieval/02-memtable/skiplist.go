@@ -22,6 +22,14 @@ type Node struct {
 	// Level	int	  // the paper says we don't need to store the level of the node in the node (p. 1)
 }
 
+func Init() (List, error) {
+	// From the Init section of the paper, it says start with 1.
+	fwd := BuildForwardList(1)
+	header := &Node{fwd, nil, nil}
+
+	return List{header, 1}, nil
+}
+
 func (list *List) Search(searchKey []byte) ([]byte, bool) {
 	x := list.Header
 	for i := (list.Level - 1); i >= 0; i-- {

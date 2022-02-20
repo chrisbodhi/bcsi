@@ -1,8 +1,9 @@
 package memtable
 
 import (
-	"bytes"
-	"fmt"
+	// "bytes"
+	// "fmt"
+	"log"
 	"testing"
 )
 
@@ -10,7 +11,12 @@ import (
 
 func TestGet(t *testing.T) {
 	var l LvlUp
-	l.ds = make(map[string][]byte)
+	list, err := Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	l.ds = list
 
 	k := []byte("do")
 	v := []byte("dope")
@@ -29,105 +35,107 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestRangeScanSimple(t *testing.T) {
-	var l LvlUp
-	l.ds = make(map[string][]byte)
+// func TestRangeScanSimple(t *testing.T) {
+// 	var l LvlUp
+// 	l.ds = make(map[string][]byte)
 
-	for i := 'A'; i <= 'Z'; i++ {
-		l.ds[string(i)] = []byte{valFromKey(byte(i))}
-	}
+// 	for i := 'A'; i <= 'Z'; i++ {
+// 		l.ds[string(i)] = []byte{valFromKey(byte(i))}
+// 	}
 
-	start := []byte("B") // inclusive
-	limit := []byte("E") // exclusive
-	iter, err := l.RangeScan(start, limit)
+// 	start := []byte("B") // inclusive
+// 	limit := []byte("E") // exclusive
+// 	iter, err := l.RangeScan(start, limit)
 
-	if err != nil {
-		t.Fatalf("RangeScan err: %s\n", err)
-	}
+// 	if err != nil {
+// 		t.Fatalf("RangeScan err: %s\n", err)
+// 	}
 
-	firstValue := iter.Value()
+// 	firstValue := iter.Value()
 
-	if firstValue[0] != valFromKey(start[0]) {
-		t.Fatalf("First value was not %c, it was %c.\n", valFromKey(start[0]), firstValue[0])
-	}
+// 	if firstValue[0] != valFromKey(start[0]) {
+// 		t.Fatalf("First value was not %c, it was %c.\n", valFromKey(start[0]), firstValue[0])
+// 	}
 
-	iter.Next() // 'C': 'C' + 5 = 'H'
-	iter.Next() // 'D': 'D' + 5 = 'I'
+// 	iter.Next() // 'C': 'C' + 5 = 'H'
+// 	iter.Next() // 'D': 'D' + 5 = 'I'
 
-	lastValue := iter.Value()
+// 	lastValue := iter.Value()
 
-	// Minus 1 because exclusive
-	if lastValue[0] != valFromKey(limit[0]-1) {
-		t.Fatalf("Last value was not %c, it was %c.\n", valFromKey(limit[0]-1), lastValue[0])
-	}
-}
+// 	// Minus 1 because exclusive
+// 	if lastValue[0] != valFromKey(limit[0]-1) {
+// 		t.Fatalf("Last value was not %c, it was %c.\n", valFromKey(limit[0]-1), lastValue[0])
+// 	}
+// }
 
-func valFromKey(key byte) byte {
-	return key + 5
-}
+// func valFromKey(key byte) byte {
+// 	return key + 5
+// }
 
-func TestRangeScanComplex(t *testing.T) {
-	var l LvlUp
-	l.ds = make(map[string][]byte)
+// func TestRangeScanComplex(t *testing.T) {
+// 	var l LvlUp
+// 	l.ds = make(map[string][]byte)
 
-	l.ds["A"] = []byte("b")
-	l.ds["AA"] = []byte("after Z")
-	l.ds["ABC"] = []byte("defg")
-	l.ds["ABCD"] = []byte("apple")
-	l.ds["B"] = []byte("boy")
-	l.ds["BB"] = []byte("gun")
-	l.ds["BFG"] = []byte("doom")
-	l.ds["BG"] = []byte("bkgd")
-	l.ds["C"] = []byte("d")
-	l.ds["CAT"] = []byte("can")
-	l.ds["CATCH"] = []byte("me")
-	l.ds["E"] = []byte("h")
-	l.ds["EEE"] = []byte("p")
-	l.ds["EEK"] = []byte("the cat")
+// 	l.ds["A"] = []byte("b")
+// 	l.ds["AA"] = []byte("after Z")
+// 	l.ds["ABC"] = []byte("defg")
+// 	l.ds["ABCD"] = []byte("apple")
+// 	l.ds["B"] = []byte("boy")
+// 	l.ds["BB"] = []byte("gun")
+// 	l.ds["BFG"] = []byte("doom")
+// 	l.ds["BG"] = []byte("bkgd")
+// 	l.ds["C"] = []byte("d")
+// 	l.ds["CAT"] = []byte("can")
+// 	l.ds["CATCH"] = []byte("me")
+// 	l.ds["E"] = []byte("h")
+// 	l.ds["EEE"] = []byte("p")
+// 	l.ds["EEK"] = []byte("the cat")
 
-	start := []byte("BAT") // inclusive
-	limit := []byte("DOG") // exclusive
-	iter, err := l.RangeScan(start, limit)
+// 	start := []byte("BAT") // inclusive
+// 	limit := []byte("DOG") // exclusive
+// 	iter, err := l.RangeScan(start, limit)
 
-	if err != nil {
-		t.Fatalf("RangeScan err: %s\n", err)
-	}
+// 	if err != nil {
+// 		t.Fatalf("RangeScan err: %s\n", err)
+// 	}
 
-	firstValue := iter.Value()
+// 	firstValue := iter.Value()
 
-	if !bytes.Equal(firstValue, l.ds["BB"]) {
-		t.Fatalf("First value was not %c, it was %c.\n", l.ds["BB"], firstValue)
-	}
+// 	if !bytes.Equal(firstValue, l.ds["BB"]) {
+// 		t.Fatalf("First value was not %c, it was %c.\n", l.ds["BB"], firstValue)
+// 	}
 
-	iter.Next()
-	iter.Next()
+// 	iter.Next()
+// 	iter.Next()
 
-	thirdValue := iter.Value()
+// 	thirdValue := iter.Value()
 
-	if !bytes.Equal(thirdValue, l.ds["BG"]) {
-		t.Fatalf("Last value was not %c, it was %c.\n", l.ds["BG"], thirdValue)
-	}
+// 	if !bytes.Equal(thirdValue, l.ds["BG"]) {
+// 		t.Fatalf("Last value was not %c, it was %c.\n", l.ds["BG"], thirdValue)
+// 	}
 
-	// Let's run out the iterator
+// 	// Let's run out the iterator
 
-	if moreList := iter.Next(); !moreList {
-		t.Fatalf("Should have kept going, instead cannot call Next: %t", moreList)
-	}
+// 	if moreList := iter.Next(); !moreList {
+// 		t.Fatalf("Should have kept going, instead cannot call Next: %t", moreList)
+// 	}
 
-	iter.Next()
-	iter.Next()
-	iter.Next()
+// 	iter.Next()
+// 	iter.Next()
+// 	iter.Next()
 
-	if moreToGo := iter.Next(); moreToGo {
-		t.Fatalf("Should have ended, instead got %c | %t", iter.Key(), moreToGo)
-	}
+// 	if moreToGo := iter.Next(); moreToGo {
+// 		t.Fatalf("Should have ended, instead got %c | %t", iter.Key(), moreToGo)
+// 	}
 
-	if noVal := iter.Value(); noVal != nil {
-		t.Fatalf("Should have failed, but we got %c", noVal)
-	}
-}
+// 	if noVal := iter.Value(); noVal != nil {
+// 		t.Fatalf("Should have failed, but we got %c", noVal)
+// 	}
+// }
 
 // Benchmarks
+// ----------
+// For pre-Skip List implementation
 // ➜ go test -run=XXX -bench .
 // goos: darwin
 // goarch: amd64
@@ -138,20 +146,18 @@ func TestRangeScanComplex(t *testing.T) {
 // PASS
 // ok  	github.com/chrisbodhi/bcsi/ds-for-storage-and-retrieval/memtable	4.302s
 
+// fka BenchmarkPutFixed-4
 func BenchmarkPut(b *testing.B) {
 	var l LvlUp
-	l.ds = make(map[string][]byte)
-
-	for i := 0; i < b.N; i++ {
-		l.ds[fmt.Sprint(i)] = []byte(fmt.Sprint(i + 1))
+	list, err := Init()
+	if err != nil {
+		log.Fatal(err)
 	}
-}
-
-func BenchmarkPutFixed(b *testing.B) {
-	var l LvlUp
-	l.ds = make(map[string][]byte)
+	l.ds = list
+	k := []byte("A")
+	v := []byte("AA")
 
 	for i := 0; i < b.N; i++ {
-		l.ds["A"] = []byte("AA")
+		l.Put(k, v)
 	}
 }
