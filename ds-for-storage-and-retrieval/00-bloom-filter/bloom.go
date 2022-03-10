@@ -42,6 +42,7 @@ type bloomFilter interface {
 type cbBloomFilter struct {
 	data    big.Int
 	hashFns int
+	size    int64
 }
 
 // newCbBloomFilter takes arguments that determine
@@ -70,12 +71,13 @@ func newCbBloomFilter(p float64, cap int) *cbBloomFilter {
 	return &cbBloomFilter{
 		data:    *big.NewInt(int64(size)), // TODO is this zero'd?
 		hashFns: int(k),
+		size:    int64(size),
 	}
 }
 
 func (cb *cbBloomFilter) add(item string) {
 	for i := 0; i < cb.hashFns; i++ {
-		index := Hashing(item, i, int(cb.data.Int64()))
+		index := Hashing(item, i, cb.size)
 		cb.data.SetBit(&cb.data, int(index), 1)
 	}
 }
@@ -83,7 +85,7 @@ func (cb *cbBloomFilter) add(item string) {
 func (cb *cbBloomFilter) maybeContains(item string) bool {
 	checks := make([]bool, cb.hashFns)
 	for i := 0; i < cb.hashFns; i++ {
-		index := Hashing(item, i, int(cb.data.Int64()))
+		index := Hashing(item, i, cb.size)
 		checks[i] = cb.Check(int(index), &cb.data)
 	}
 	for _, check := range checks {
@@ -95,5 +97,5 @@ func (cb *cbBloomFilter) maybeContains(item string) bool {
 }
 
 func (cb *cbBloomFilter) memoryUsage() int {
-	return binary.Size(cb.data)
+	return binary.Size(cb.data.Bytes())
 }

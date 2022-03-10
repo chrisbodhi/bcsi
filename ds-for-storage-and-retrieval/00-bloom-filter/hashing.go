@@ -8,7 +8,7 @@ import (
 
 var hashFn = fnv.New64a()
 
-func Hashing(s string, index int, size int) uint {
+func Hashing(s string, index int, size int64) uint {
 	write := []byte(s + fmt.Sprint(index))
 	hashFn.Write(write)
 	usize := uint64(size)
