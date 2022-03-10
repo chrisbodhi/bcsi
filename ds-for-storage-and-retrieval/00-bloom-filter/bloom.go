@@ -50,28 +50,27 @@ type cbBloomFilter struct {
 // e.g. the bitset, in order to allow us to test various
 // properties to find the best parameters for our
 // circumstances.
+//
 // º p is the probability of false positives that
 // we are willing to accept.
-// º cap is the capacity of our Bloom filter, so that
-// we can contain any set `S` containing up to `cap`
+//
+// º n is the capacity of our Bloom filter, so that
+// we can contain any set `S` containing up to `n`
 // elements.
-func newCbBloomFilter(p float64, cap int) *cbBloomFilter {
-	k := math.Log(1 / p)
-	// k := 6.0
+func newCbBloomFilter(p float64, n float64) *cbBloomFilter {
+	// m is required number of bits (size)
+	m := -(float64(n) * math.Log(p)) / (math.Log(2) * math.Log(2))
+	// k is the number of hash functions
+	k := (m / n) * math.Log(2)
 	fmt.Println("p:", p)
-	fmt.Println("cap:", cap)
+	fmt.Println("cap (n):", n)
 	fmt.Println("k:", k)
-	// size-1 also becomes the max returned value of
-	// our hash functions
-	// TODO revisit this calculation; should I still have
-	// to multiply by 10 to get a good result?
-	sizeF := (float64(cap) / math.Log(2)) * math.Log2(1/p)
-	size := sizeF * 10.0
-	fmt.Println("size:", size)
+	fmt.Println("size (m):", m)
+
 	return &cbBloomFilter{
-		data:    *big.NewInt(int64(size)), // TODO is this zero'd?
+		data:    *big.NewInt(int64(m)),
 		hashFns: int(k),
-		size:    int64(size),
+		size:    int64(m),
 	}
 }
 

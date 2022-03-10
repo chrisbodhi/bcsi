@@ -37,7 +37,7 @@ func main() {
 	var b bloomFilter = newTrivialBloomFilter()
 	// We want the size to be a bit more than the number
 	// of words in /usr/share/dict/words, which is 235,886
-	var cb bloomFilter = newCbBloomFilter(0.01, 24000)
+	var cb bloomFilter = newCbBloomFilter(0.01, 240000.0)
 
 	wordsAdded := 0
 	// Add every other word (even indices)
@@ -78,10 +78,12 @@ func main() {
 	cbFalsePositiveRate := float64(cbFalsePositives) / float64(numChecked)
 
 	fmt.Printf("Elapsed time: %s\n", time.Since(start))
+	fmt.Printf("Words added: %d\n", wordsAdded)
+
 	fmt.Println("* * * * * *")
+
 	fmt.Printf("Memory usage: %d bytes\n", b.memoryUsage())
 	fmt.Printf("False positive rate: %0.2f%%\n", 100*falsePositiveRate)
-	fmt.Printf("Words added: %d\n", wordsAdded)
 
 	fmt.Println("* * * * * *")
 
