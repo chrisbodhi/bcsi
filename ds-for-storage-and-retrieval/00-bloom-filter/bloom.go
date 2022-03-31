@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
-	"math"
 	"math/big"
+	"math"
 )
 
 type trivialBloomFilter struct {
