@@ -1,0 +1,76 @@
+#+TITLE: Concurrency
+
+#+begin_quote
+Consider the following interface for an “ID service”:
+
+type idService interface {
+    // Returns values in ascending order; it should be safe to call
+    // getNext() concurrently without any additional synchronization.
+    getNext() uint64
+}
+
+Implement this interface using each of the following four strategies:
+
+1. Don’t perform any synchronization
+2. Atomically increment a counter value using sync/atomic
+3. Use a sync.Mutex to guard access to a shared counter value
+4. Launch a separate goroutine with exclusive access to a private counter value; handle getNext() calls by making “requests” and receiving “responses” on two separate channels
+
+Aside from the first (obviously incorrect) strategy, ensure that your implementations are correct by making sure that:
+
+- In the context of a particular goroutine making calls to getNext(), returned values are monotonically increasing
+- The maximum value returned by getNext() matches the total number of calls across all goroutines
+- Go’s race detector doesn’t detect any race conditions
+- How do you expect these different strategies to compare in terms of performance? What are the bottlenecks in each case?
+#+end_quote
+
+* No async
+#+begin_src go :imports '("fmt")
+type idService interface {
+    getNext() uint64
+}
+
+type noAsync struct {
+	ch chan uint64
+}
+
+func (n noAsync) init() {
+	for i := uint64(0); i < 30; i++ {
+		n.ch <- i
+	}
+}
+
+func (n noAsync) getNext() uint64 {
+	next := <- n.ch
+	return next
+}
+
+func main() {
+	ch := make(chan uint64)
+	s := noAsync{ch}
+	go s.init()
+
+	for i := 0; i < 10; i++ {
+		fmt.Println(s.getNext())
+	}
+}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+#+end_example
+
+* =sync/atomic=
+#+begin_src go :imports '("foo")
+// TODO tangle prework-03-atomic.go
+#+end_src
