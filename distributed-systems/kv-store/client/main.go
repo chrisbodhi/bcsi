@@ -29,7 +29,7 @@ func main() {
 		case input := <-inputCh:
 			fmt.Println("You entered:", input)
 		case <-sigCh:
-			fmt.Println("Toodles!")
+			fmt.Println("\nToodles!")
 			return
 		}
 	}
