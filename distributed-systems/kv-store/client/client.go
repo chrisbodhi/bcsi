@@ -1,62 +1,50 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"net"
-	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 
 	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/utils"
+	"github.com/chzyer/readline"
 )
 
 func main() {
 	fmt.Println("Starting client...")
 
-	inputCh := make(chan string)
-	sigCh := make(chan os.Signal, 1)
-
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		// TODO: replace with readline -- https://pkg.go.dev/github.com/chzyer/readline
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			inputCh <- scanner.Text()
-		}
-	}()
+	rl, err := readline.New("🔑 ")
+	if err != nil {
+		panic(err)
+	}
+	defer rl.Close()
 
 	for {
-		fmt.Print("🔑 ")
-		select {
-		case input := <-inputCh:
-			// TODO: improve variable names
-			if !strings.HasPrefix(input, "get") && !strings.HasPrefix(input, "set") {
-				fmt.Println("Usage: `get KEY` or `set KEY=VALUE`")
-				continue
-			}
+		line, err := rl.Readline()
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		// TODO: improve variable names
+		if !strings.HasPrefix(line, "get") && !strings.HasPrefix(line, "set") {
+			fmt.Println("Usage: `get KEY` or `set KEY=VALUE`")
+			continue
+		}
 
-			args := strings.Split(input, " ")
-			cmd := args[0]
+		args := strings.Split(line, " ")
+		cmd := args[0]
 
-			if cmd == "get" {
-				sendAndReceive(input)
-			} else if cmd == "set" {
-				setArg := utils.WithSpace(args[1:])
-				// Validate equals sign
-				err := utils.ValidateSet(setArg)
-				if err != nil {
-					fmt.Println(err)
-				}
-				sendAndReceive(input)
-			} else {
-				fmt.Println("`get` or `set`?")
+		if cmd == "get" {
+			sendAndReceive(line)
+		} else if cmd == "set" {
+			setArg := utils.WithSpace(args[1:])
+			// Validate equals sign
+			err := utils.ValidateSet(setArg)
+			if err != nil {
+				fmt.Println(err)
 			}
-		case <-sigCh:
-			fmt.Println("\nToodles!")
-			return
+			sendAndReceive(line)
+		} else {
+			fmt.Println("`get` or `set`?")
 		}
 	}
 }
