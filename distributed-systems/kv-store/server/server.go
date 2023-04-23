@@ -7,6 +7,8 @@ import (
 	"net"
 	"os"
 	"strings"
+
+	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/utils"
 )
 
 var mem = make(map[string]string)
@@ -43,7 +45,14 @@ func handleConnection(conn net.Conn) {
 		got := Get(args[1])
 		conn.Write([]byte(got))
 	} else if cmd == "set" {
-		k, v := strings.Split(args[1], "=")[0], strings.Split(args[1], "=")[1]
+		err := utils.ValidateSet(args[1])
+		if err != nil {
+			fmt.Println(err)
+			conn.Write([]byte("<validation error>"))
+			return
+		}
+		setPieces := strings.Split(args[1], "=")
+		k, v := setPieces[0], setPieces[1]
 		Set(k, v)
 		conn.Write([]byte("ok"))
 	} else {
@@ -87,7 +96,6 @@ func Get(key string) string {
 }
 
 func Set(key, value string) {
-	// TODO: error handling
 	mem[key] = value
 	// Flush mem to storage.json
 	updateDatastore()

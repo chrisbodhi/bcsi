@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/utils"
 )
 
 func main() {
@@ -38,33 +40,14 @@ func main() {
 			}
 			cmd := args[0]
 			if cmd == "get" {
-				conn, err := net.Dial("tcp", ":8888")
-				if err != nil {
-					fmt.Println(err)
-				}
-				defer conn.Close()
-				conn.Write([]byte(input))
-				buf := make([]byte, 1024)
-				n, err := conn.Read(buf)
-				if err != nil {
-					fmt.Println(err)
-				}
-				fmt.Println(string(buf[:n]))
+				sendAndReceive(input)
 			} else if cmd == "set" {
-				// TODO: validate equals sign
-				// TODO: do I care about spaces around the equals sign?
-				conn, err := net.Dial("tcp", ":8888")
+				// Validate equals sign
+				err := utils.ValidateSet(args[1])
 				if err != nil {
 					fmt.Println(err)
 				}
-				defer conn.Close()
-				conn.Write([]byte(input))
-				buf := make([]byte, 1024)
-				n, err := conn.Read(buf)
-				if err != nil {
-					fmt.Println(err)
-				}
-				fmt.Println(string(buf[:n]))
+				sendAndReceive(input)
 			} else {
 				fmt.Println("`get` or `set`?")
 			}
@@ -73,4 +56,21 @@ func main() {
 			return
 		}
 	}
+}
+
+func sendAndReceive(input string) {
+	conn, err := net.Dial("tcp", ":8888")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer conn.Close()
+
+	conn.Write([]byte(input))
+
+	buffer := make([]byte, 1024)
+	bufferLen, err := conn.Read(buffer)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(string(buffer[:bufferLen]))
 }
