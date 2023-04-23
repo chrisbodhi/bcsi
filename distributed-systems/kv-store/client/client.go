@@ -33,17 +33,20 @@ func main() {
 		select {
 		case input := <-inputCh:
 			// TODO: improve variable names
-			args := strings.Split(input, " ")
-			if len(args) != 2 {
+			if !strings.HasPrefix(input, "get") && !strings.HasPrefix(input, "set") {
 				fmt.Println("Usage: `get KEY` or `set KEY=VALUE`")
 				continue
 			}
+
+			args := strings.Split(input, " ")
 			cmd := args[0]
+
 			if cmd == "get" {
 				sendAndReceive(input)
 			} else if cmd == "set" {
+				setArg := utils.WithSpace(args[1:])
 				// Validate equals sign
-				err := utils.ValidateSet(args[1])
+				err := utils.ValidateSet(setArg)
 				if err != nil {
 					fmt.Println(err)
 				}

@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// ValidateSet ensures we have a key string, an equal sign, and then anything else, really.
 func ValidateSet(input string) error {
 	parts := strings.Split(input, "=")
 
@@ -27,4 +28,8 @@ func ValidateSet(input string) error {
 	}
 
 	return nil
+}
+
+func WithSpace(inputs []string) string {
+	return strings.Join(inputs, " ")
 }

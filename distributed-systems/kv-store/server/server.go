@@ -16,6 +16,7 @@ var mem = make(map[string]string)
 var STORAGE = "storage.json"
 
 func main() {
+	loadDatastore()
 	listener, err := net.Listen("tcp", ":8888")
 	if err != nil {
 		fmt.Println(err)
@@ -38,9 +39,11 @@ func handleConnection(conn net.Conn) {
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	key := string(buf[:n])
 	args := strings.Split(key, " ")
 	cmd := args[0]
+
 	if cmd == "get" {
 		got := Get(args[1])
 		conn.Write([]byte(got))
@@ -51,8 +54,8 @@ func handleConnection(conn net.Conn) {
 			conn.Write([]byte("<validation error>"))
 			return
 		}
-		setPieces := strings.Split(args[1], "=")
-		k, v := setPieces[0], setPieces[1]
+		setPieces := strings.Split(utils.WithSpace(args[1:]), "=")
+		k, v := setPieces[0], utils.WithSpace(setPieces[1:])
 		Set(k, v)
 		conn.Write([]byte("ok"))
 	} else {
@@ -71,6 +74,7 @@ func loadDatastore() {
 		fmt.Println(err)
 	}
 	json.Unmarshal(byteValue, &mem)
+	fmt.Println(mem)
 }
 
 func updateDatastore() {
@@ -87,7 +91,6 @@ func updateDatastore() {
 }
 
 func Get(key string) string {
-	loadDatastore()
 	val, ok := mem[key]
 	if !ok {
 		return "<not found>"
