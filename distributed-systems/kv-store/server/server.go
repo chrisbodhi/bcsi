@@ -28,9 +28,6 @@ func main() {
 		}
 		go handleConnection(conn)
 	}
-
-	// loadDatastore()
-	// fmt.Println(fmt.Sprintf("Successfully opened %s\nand loaded it into memory:", STORAGE), mem)
 }
 
 func handleConnection(conn net.Conn) {
@@ -40,7 +37,6 @@ func handleConnection(conn net.Conn) {
 		fmt.Println(err)
 	}
 	key := string(buf[:n])
-	fmt.Println("Received:", key)
 	args := strings.Split(key, " ")
 	cmd := args[0]
 	if cmd == "get" {
@@ -83,9 +79,11 @@ func updateDatastore() {
 
 func Get(key string) string {
 	loadDatastore()
-	// TODO: error handling
-	fmt.Println("Found", mem[key])
-	return mem[key]
+	val, ok := mem[key]
+	if !ok {
+		return "<not found>"
+	}
+	return val
 }
 
 func Set(key, value string) {
