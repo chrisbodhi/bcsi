@@ -1,19 +1,58 @@
-package server
+package main
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"os"
+	"strings"
 )
 
 var mem = make(map[string]string)
 
 var STORAGE = "storage.json"
 
-func init() {
-	loadDatastore()
-	fmt.Println(fmt.Sprintf("Successfully opened %s\nand loaded it into memory:", STORAGE), mem)
+func main() {
+	listener, err := net.Listen("tcp", ":8888")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Listening on :8888...")
+	defer listener.Close()
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println(err)
+		}
+		go handleConnection(conn)
+	}
+
+	// loadDatastore()
+	// fmt.Println(fmt.Sprintf("Successfully opened %s\nand loaded it into memory:", STORAGE), mem)
+}
+
+func handleConnection(conn net.Conn) {
+	buf := make([]byte, 1024)
+	n, err := conn.Read(buf)
+	if err != nil {
+		fmt.Println(err)
+	}
+	key := string(buf[:n])
+	fmt.Println("Received:", key)
+	args := strings.Split(key, " ")
+	cmd := args[0]
+	if cmd == "get" {
+		got := Get(args[1])
+		conn.Write([]byte(got))
+	} else if cmd == "set" {
+		k, v := strings.Split(args[1], "=")[0], strings.Split(args[1], "=")[1]
+		Set(k, v)
+		conn.Write([]byte("ok"))
+	} else {
+		fmt.Println("Unknown command:", cmd)
+	}
 }
 
 func loadDatastore() {
@@ -22,7 +61,10 @@ func loadDatastore() {
 		fmt.Println(err)
 	}
 	defer jsonFile.Close()
-	byteValue, _ := io.ReadAll(jsonFile)
+	byteValue, err := io.ReadAll(jsonFile)
+	if err != nil {
+		fmt.Println(err)
+	}
 	json.Unmarshal(byteValue, &mem)
 }
 
@@ -39,10 +81,11 @@ func updateDatastore() {
 	jsonFile.Write(jsonData)
 }
 
-func Get(key string) {
+func Get(key string) string {
 	loadDatastore()
 	// TODO: error handling
-	fmt.Println(mem[key])
+	fmt.Println("Found", mem[key])
+	return mem[key]
 }
 
 func Set(key, value string) {

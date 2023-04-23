@@ -3,12 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-
-	server "github.com/chrisbodhi/bcsi/distributed-systems/kv-store/server"
 )
 
 func main() {
@@ -38,15 +37,35 @@ func main() {
 				continue
 			}
 			cmd := args[0]
-			rest := args[1]
 			if cmd == "get" {
-				server.Get(rest)
+				conn, err := net.Dial("tcp", ":8888")
+				if err != nil {
+					fmt.Println(err)
+				}
+				defer conn.Close()
+				conn.Write([]byte(input))
+				buf := make([]byte, 1024)
+				n, err := conn.Read(buf)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Println(string(buf[:n]))
 			} else if cmd == "set" {
 				// TODO: validate equals sign
 				// TODO: do I care about spaces around the equals sign?
-				k, v := strings.Split(rest, "=")[0], strings.Split(rest, "=")[1]
-				// TODO: do I want to consider handling types?
-				server.Set(k, v)
+				// k, v := strings.Split(rest, "=")[0], strings.Split(rest, "=")[1]
+				conn, err := net.Dial("tcp", ":8888")
+				if err != nil {
+					fmt.Println(err)
+				}
+				defer conn.Close()
+				conn.Write([]byte(input))
+				buf := make([]byte, 1024)
+				n, err := conn.Read(buf)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Println(string(buf[:n]))
 			} else {
 				fmt.Println("`get` or `set`?")
 			}
