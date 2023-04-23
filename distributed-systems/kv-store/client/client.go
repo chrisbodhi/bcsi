@@ -53,7 +53,6 @@ func main() {
 			} else if cmd == "set" {
 				// TODO: validate equals sign
 				// TODO: do I care about spaces around the equals sign?
-				// k, v := strings.Split(rest, "=")[0], strings.Split(rest, "=")[1]
 				conn, err := net.Dial("tcp", ":8888")
 				if err != nil {
 					fmt.Println(err)
