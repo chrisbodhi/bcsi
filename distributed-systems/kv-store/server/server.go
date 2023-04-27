@@ -11,11 +11,12 @@ import (
 	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/utils"
 )
 
-var mem = make(map[string]string)
+var mem = make(map[string]map[string]string)
 
 var STORAGE_BASE = "storage.json"
 
 func main() {
+	// TODO: are these two lines necessary?
 	table := "default"
 	loadDatastore(table)
 	listener, err := net.Listen("tcp", ":8888")
@@ -43,21 +44,23 @@ func handleConnection(conn net.Conn) {
 
 	key := string(buf[:n])
 	args := strings.Split(key, " ")
-	cmd := args[0]
+	displayTables := args[0]
+	tables := strings.Split(displayTables, ",")
+	cmd := args[1]
 
 	if cmd == "get" {
-		got := Get(args[1])
+		got := Get(args[2], tables)
 		conn.Write([]byte(got))
 	} else if cmd == "set" {
-		err := utils.ValidateSet(args[1])
+		err := utils.ValidateSet(args[2])
 		if err != nil {
 			fmt.Println(err)
 			conn.Write([]byte("<validation error>"))
 			return
 		}
-		setPieces := strings.Split(utils.WithSpace(args[1:]), "=")
+		setPieces := strings.Split(utils.WithSpace(args[2:]), "=")
 		k, v := setPieces[0], utils.WithSpace(setPieces[1:])
-		Set(k, v)
+		Set(k, v, tables)
 		conn.Write([]byte("ok"))
 	} else {
 		fmt.Println("Unknown command:", cmd)
@@ -82,7 +85,9 @@ func loadDatastore(table string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	json.Unmarshal(byteValue, &mem)
+	localTable := make(map[string]string)
+	json.Unmarshal(byteValue, &localTable)
+	mem[table] = localTable
 	fmt.Println(mem)
 }
 
@@ -100,25 +105,35 @@ func updateDatastore(table string) {
 		fmt.Println(err)
 	}
 	defer jsonFile.Close()
-	jsonData, err := json.Marshal(mem)
+	jsonData, err := json.Marshal(mem[table])
 	if err != nil {
 		fmt.Println(err)
 	}
 	jsonFile.Write(jsonData)
 }
 
-func Get(key string) string {
-	val, ok := mem[key]
-	if !ok {
-		return "<not found>"
+func Get(key string, tables []string) string {
+	// TODO: placeholder code is just a placeholder
+	last := ""
+	for _, table := range tables {
+		loadDatastore(table)
+		val, ok := mem[table][key]
+		last = val
+		if !ok {
+			last = "<not found>"
+		}
 	}
-	return val
+	return last
 }
 
-func Set(key, value string) {
-	table := "default"
-	mem[key] = value
+func Set(key, value string, tables []string) {
 	// Flush mem to table_storage.json
-	updateDatastore(table)
+	for _, table := range tables {
+		if _, ok := mem[table]; !ok {
+			mem[table] = make(map[string]string)
+		}
+		mem[table][key] = value
+		updateDatastore(table)
+	}
 	fmt.Println(key, value)
 }
