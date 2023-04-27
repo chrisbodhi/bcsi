@@ -73,14 +73,15 @@ func sendAndReceive(input string, tables []string) {
 		// TODO: verify table exists; we want to handle typos in the table name
 		//       so that we don't end up with "default" and "deafult" and "defualt" &c.
 		fmt.Println("Using table:", table)
+		send := fmt.Sprintf("%s %s", table, input)
+		conn.Write([]byte(send))
+
+		buffer := make([]byte, 1024)
+		bufferLen, err := conn.Read(buffer)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(buffer[:bufferLen]))
 	}
 
-	conn.Write([]byte(input))
-
-	buffer := make([]byte, 1024)
-	bufferLen, err := conn.Read(buffer)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(string(buffer[:bufferLen]))
 }
