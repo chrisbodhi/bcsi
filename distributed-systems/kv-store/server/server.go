@@ -13,10 +13,11 @@ import (
 
 var mem = make(map[string]string)
 
-var STORAGE = "storage.json"
+var STORAGE_BASE = "storage.json"
 
 func main() {
-	loadDatastore()
+	table := "default"
+	loadDatastore(table)
 	listener, err := net.Listen("tcp", ":8888")
 	if err != nil {
 		fmt.Println(err)
@@ -63,8 +64,16 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-func loadDatastore() {
-	jsonFile, err := os.Open(STORAGE)
+func loadDatastore(table string) {
+	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
+	// Create storage file if it doesn't exist
+	if _, err := os.Stat(storage); os.IsNotExist(err) {
+		_, err := os.Create(storage)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	jsonFile, err := os.Open(storage)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -77,8 +86,16 @@ func loadDatastore() {
 	fmt.Println(mem)
 }
 
-func updateDatastore() {
-	jsonFile, err := os.OpenFile(STORAGE, os.O_RDWR, 0644)
+func updateDatastore(table string) {
+	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
+	// Create storage file if it doesn't exist
+	if _, err := os.Stat(storage); os.IsNotExist(err) {
+		_, err := os.Create(storage)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	jsonFile, err := os.OpenFile(storage, os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -99,8 +116,9 @@ func Get(key string) string {
 }
 
 func Set(key, value string) {
+	table := "default"
 	mem[key] = value
-	// Flush mem to storage.json
-	updateDatastore()
+	// Flush mem to table_storage.json
+	updateDatastore(table)
 	fmt.Println(key, value)
 }
