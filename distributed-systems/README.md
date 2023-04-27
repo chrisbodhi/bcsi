@@ -26,3 +26,5 @@ $ echo -n "get my-key" | nc localhost 8888
 
 Developed with Go v1.19+
 
+In your editor, open the directory&mdash;eg `kv-store`&mdash;that has the `go.work` file in order to make use of Go's workspaces.
+
