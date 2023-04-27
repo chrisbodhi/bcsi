@@ -28,15 +28,25 @@ func main() {
 			break
 		}
 		// TODO: improve variable names
-		if !strings.HasPrefix(line, "get") && !strings.HasPrefix(line, "set") {
-			fmt.Println("Usage: `get KEY` or `set KEY=VALUE`")
+		if !strings.HasPrefix(line, "get") && !strings.HasPrefix(line, "pick") && !strings.HasPrefix(line, "set") {
+			fmt.Println("Usage: `get KEY` or `set KEY=VALUE` or `pick TABLE1 TABLE2 TABLE3`")
 			continue
 		}
 
 		args := strings.Split(line, " ")
 		cmd := args[0]
 
-		if cmd == "get" {
+		if cmd == "pick" {
+			tables = args[1:]
+			displayTables = strings.Join(tables, ", ")
+			fmt.Println("Using tables:", displayTables)
+			// Reload readline with new prompt
+			rl, err = readline.New(fmt.Sprintf("🔑 (%s) ", displayTables))
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
+		} else if cmd == "get" {
 			sendAndReceive(line, tables)
 		} else if cmd == "set" {
 			setArg := utils.WithSpace(args[1:])
