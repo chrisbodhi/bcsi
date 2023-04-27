@@ -29,6 +29,7 @@ func main() {
 		}
 		// TODO: improve variable names
 		if !strings.HasPrefix(line, "get") && !strings.HasPrefix(line, "pick") && !strings.HasPrefix(line, "set") {
+			// TODO: add ability to drop table(s)
 			fmt.Println("Usage: `get KEY` or `set KEY=VALUE` or `pick TABLE1 TABLE2 TABLE3`")
 			continue
 		}
