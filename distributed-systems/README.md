@@ -26,9 +26,3 @@ $ echo -n "get my-key" | nc localhost 8888
 
 Developed with Go v1.19+
 
-Run client:
-
-```sh
-$ go run client/main.go
-```
-
