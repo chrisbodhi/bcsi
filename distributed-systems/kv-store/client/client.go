@@ -12,7 +12,10 @@ import (
 func main() {
 	fmt.Println("Starting client...")
 
-	rl, err := readline.New("🔑 ")
+	tables := []string{"default"}
+	displayTables := strings.Join(tables, ", ")
+
+	rl, err := readline.New(fmt.Sprintf("🔑 (%s) ", displayTables))
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +37,7 @@ func main() {
 		cmd := args[0]
 
 		if cmd == "get" {
-			sendAndReceive(line)
+			sendAndReceive(line, tables)
 		} else if cmd == "set" {
 			setArg := utils.WithSpace(args[1:])
 			// Validate equals sign
@@ -42,19 +45,25 @@ func main() {
 			if err != nil {
 				fmt.Println(err)
 			}
-			sendAndReceive(line)
+			sendAndReceive(line, tables)
 		} else {
 			fmt.Println("`get` or `set`?")
 		}
 	}
 }
 
-func sendAndReceive(input string) {
+func sendAndReceive(input string, tables []string) {
 	conn, err := net.Dial("tcp", ":8888")
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer conn.Close()
+
+	for _, table := range tables {
+		// TODO: verify table exists; we want to handle typos in the table name
+		//       so that we don't end up with "default" and "deafult" and "defualt" &c.
+		fmt.Println("Using table:", table)
+	}
 
 	conn.Write([]byte(input))
 
