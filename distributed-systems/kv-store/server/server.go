@@ -127,7 +127,7 @@ func Get(key string, tables []string) string {
 }
 
 func Set(key, value string, tables []string) {
-	// Flush mem to table_storage.json
+	// Flush mem to {table}_storage.json
 	for _, table := range tables {
 		if _, ok := mem[table]; !ok {
 			mem[table] = make(map[string]string)
@@ -135,5 +135,8 @@ func Set(key, value string, tables []string) {
 		mem[table][key] = value
 		updateDatastore(table)
 	}
-	fmt.Println(key, value)
+	// TODO: troubleshoot the setting of the same value on multiple tables
+	// looking for last=test
+	// might be an issue with the connection?
+	fmt.Printf("Set %s to %s", key, value)
 }
