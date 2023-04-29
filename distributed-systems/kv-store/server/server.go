@@ -11,12 +11,14 @@ import (
 	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/utils"
 )
 
-var mem = make(map[string]string)
+var mem = make(map[string]map[string]string)
 
-var STORAGE = "storage.json"
+var STORAGE_BASE = "storage.json"
 
 func main() {
-	loadDatastore()
+	// TODO: are these two lines necessary?
+	table := "default"
+	loadDatastore(table)
 	listener, err := net.Listen("tcp", ":8888")
 	if err != nil {
 		fmt.Println(err)
@@ -42,29 +44,42 @@ func handleConnection(conn net.Conn) {
 
 	key := string(buf[:n])
 	args := strings.Split(key, " ")
-	cmd := args[0]
+	displayTables := args[0]
+	tables := strings.Split(displayTables, ",")
+	cmd := args[1]
 
-	if cmd == "get" {
-		got := Get(args[1])
+	if cmd == "drop" {
+		dropped := Drop(displayTables)
+		conn.Write([]byte(dropped))
+	} else if cmd == "get" {
+		got := Get(args[2], tables)
 		conn.Write([]byte(got))
 	} else if cmd == "set" {
-		err := utils.ValidateSet(args[1])
+		err := utils.ValidateSet(args[2])
 		if err != nil {
 			fmt.Println(err)
 			conn.Write([]byte("<validation error>"))
 			return
 		}
-		setPieces := strings.Split(utils.WithSpace(args[1:]), "=")
+		setPieces := strings.Split(utils.WithSpace(args[2:]), "=")
 		k, v := setPieces[0], utils.WithSpace(setPieces[1:])
-		Set(k, v)
+		Set(k, v, tables)
 		conn.Write([]byte("ok"))
 	} else {
 		fmt.Println("Unknown command:", cmd)
 	}
 }
 
-func loadDatastore() {
-	jsonFile, err := os.Open(STORAGE)
+func loadDatastore(table string) {
+	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
+	// Create storage file if it doesn't exist
+	if _, err := os.Stat(storage); os.IsNotExist(err) {
+		_, err := os.Create(storage)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	jsonFile, err := os.Open(storage)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -73,34 +88,73 @@ func loadDatastore() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	json.Unmarshal(byteValue, &mem)
+	localTable := make(map[string]string)
+	json.Unmarshal(byteValue, &localTable)
+	mem[table] = localTable
 	fmt.Println(mem)
 }
 
-func updateDatastore() {
-	jsonFile, err := os.OpenFile(STORAGE, os.O_RDWR, 0644)
+func updateDatastore(table string) {
+	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
+	// Create storage file if it doesn't exist
+	if _, err := os.Stat(storage); os.IsNotExist(err) {
+		_, err := os.Create(storage)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	jsonFile, err := os.OpenFile(storage, os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer jsonFile.Close()
-	jsonData, err := json.Marshal(mem)
+	jsonData, err := json.Marshal(mem[table])
 	if err != nil {
 		fmt.Println(err)
 	}
 	jsonFile.Write(jsonData)
 }
 
-func Get(key string) string {
-	val, ok := mem[key]
-	if !ok {
-		return "<not found>"
+func Get(key string, tables []string) string {
+	// TODO: placeholder code is just a placeholder
+	// This needs to be more intelligent than just
+	// printing all values, table by table.
+	last := ""
+	for _, table := range tables {
+		loadDatastore(table)
+		val, ok := mem[table][key]
+		last = val
+		if !ok {
+			last = "<not found>"
+		}
 	}
-	return val
+	return last
 }
 
-func Set(key, value string) {
-	mem[key] = value
-	// Flush mem to storage.json
-	updateDatastore()
-	fmt.Println(key, value)
+func Set(key, value string, tables []string) {
+	// Flush mem to {table}_storage.json
+	for _, table := range tables {
+		if _, ok := mem[table]; !ok {
+			mem[table] = make(map[string]string)
+		}
+		mem[table][key] = value
+		updateDatastore(table)
+	}
+	fmt.Printf("Set %s to %s", key, value)
+}
+
+func Drop(table string) string {
+	// Remove from mem
+	if _, ok := mem[table]; ok {
+		delete(mem, table)
+	} else {
+		return fmt.Sprintf("%s does not exist", table)
+	}
+	// Rename backing datastore/file
+	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
+	if err := os.Rename(storage, fmt.Sprintf("dropped_%s", table)); err != nil {
+		return fmt.Sprintf("Failed to removing backing datastore for %s", table)
+	}
+
+	return fmt.Sprintf("Removed %s", table)
 }
