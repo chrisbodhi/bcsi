@@ -28,8 +28,8 @@ func main() {
 			break
 		}
 		// TODO: improve variable names
-		if !strings.HasPrefix(line, "get") && !strings.HasPrefix(line, "pick") && !strings.HasPrefix(line, "set") {
-			fmt.Println("Usage: `get KEY` or `set KEY=VALUE` or `pick TABLE1 TABLE2 TABLE3`")
+		if !strings.HasPrefix(line, "get") && !strings.HasPrefix(line, "pick") && !strings.HasPrefix(line, "set") && !strings.HasPrefix(line, "drop") {
+			fmt.Println("Usage: `get KEY` or `set KEY=VALUE` or `pick TABLE1 TABLE2 TABLE3` or `drop TABLE1 TABLE2`")
 			continue
 		}
 
@@ -46,6 +46,12 @@ func main() {
 				fmt.Println(err)
 				break
 			}
+		} else if cmd == "drop" {
+			// TODO: do not drop table if it is current table
+			//       OR switch to default and then drop
+			table := args[1:][0]
+			fmt.Println("table to delete", table)
+			sendAndReceive(cmd, table)
 		} else if cmd == "get" {
 			for _, table := range tables {
 				sendAndReceive(line, table)
@@ -61,7 +67,7 @@ func main() {
 				sendAndReceive(line, table)
 			}
 		} else {
-			fmt.Println("`get` or `set`?")
+			fmt.Println("`get` or `set`? Maybe `pick` or `drop`?")
 		}
 	}
 }

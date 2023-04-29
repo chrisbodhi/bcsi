@@ -48,7 +48,10 @@ func handleConnection(conn net.Conn) {
 	tables := strings.Split(displayTables, ",")
 	cmd := args[1]
 
-	if cmd == "get" {
+	if cmd == "drop" {
+		dropped := Drop(displayTables)
+		conn.Write([]byte(dropped))
+	} else if cmd == "get" {
 		got := Get(args[2], tables)
 		conn.Write([]byte(got))
 	} else if cmd == "set" {
@@ -114,6 +117,8 @@ func updateDatastore(table string) {
 
 func Get(key string, tables []string) string {
 	// TODO: placeholder code is just a placeholder
+	// This needs to be more intelligent than just
+	// printing all values, table by table.
 	last := ""
 	for _, table := range tables {
 		loadDatastore(table)
@@ -135,8 +140,21 @@ func Set(key, value string, tables []string) {
 		mem[table][key] = value
 		updateDatastore(table)
 	}
-	// TODO: troubleshoot the setting of the same value on multiple tables
-	// looking for last=test
-	// might be an issue with the connection?
 	fmt.Printf("Set %s to %s", key, value)
+}
+
+func Drop(table string) string {
+	// Remove from mem
+	if _, ok := mem[table]; ok {
+		delete(mem, table)
+	} else {
+		return fmt.Sprintf("%s does not exist", table)
+	}
+	// Rename backing datastore/file
+	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
+	if err := os.Rename(storage, fmt.Sprintf("dropped_%s", table)); err != nil {
+		return fmt.Sprintf("Failed to removing backing datastore for %s", table)
+	}
+
+	return fmt.Sprintf("Removed %s", table)
 }
