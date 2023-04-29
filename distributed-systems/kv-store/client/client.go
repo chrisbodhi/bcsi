@@ -47,7 +47,9 @@ func main() {
 				break
 			}
 		} else if cmd == "get" {
-			sendAndReceive(line, tables)
+			for _, table := range tables {
+				sendAndReceive(line, table)
+			}
 		} else if cmd == "set" {
 			setArg := utils.WithSpace(args[1:])
 			// Validate equals sign
@@ -55,33 +57,32 @@ func main() {
 			if err != nil {
 				fmt.Println(err)
 			}
-			sendAndReceive(line, tables)
+			for _, table := range tables {
+				sendAndReceive(line, table)
+			}
 		} else {
 			fmt.Println("`get` or `set`?")
 		}
 	}
 }
 
-func sendAndReceive(input string, tables []string) {
+func sendAndReceive(input string, table string) {
 	conn, err := net.Dial("tcp", ":8888")
 	if err != nil {
 		fmt.Println(err)
 	}
 	defer conn.Close()
 
-	for _, table := range tables {
-		// TODO: verify table exists; we want to handle typos in the table name
-		//       so that we don't end up with "default" and "deafult" and "defualt" &c.
-		fmt.Println("Using table:", table)
-		send := fmt.Sprintf("%s %s", table, input)
-		conn.Write([]byte(send))
+	// TODO: verify table exists; we want to handle typos in the table name
+	//       so that we don't end up with "default" and "deafult" and "defualt" &c.
+	fmt.Println("Using table:", table)
+	send := fmt.Sprintf("%s %s", table, input)
+	conn.Write([]byte(send))
 
-		buffer := make([]byte, 1024)
-		bufferLen, err := conn.Read(buffer)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(string(buffer[:bufferLen]))
+	buffer := make([]byte, 1024)
+	bufferLen, err := conn.Read(buffer)
+	if err != nil {
+		fmt.Println(err)
 	}
-
+	fmt.Println(string(buffer[:bufferLen]))
 }
