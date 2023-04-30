@@ -1,8 +1,43 @@
 # Distributed systems
 
-## 01: Set it and (for)get it
+## K-V Store
 
-### Running
+A mapping between Twitter handle and handle & host for AT Protocol
+
+When adding a new Twitter handle, we go ahead and fetch the decentralized identifier (DID) from the PDS you specified as the host.
+
+```sh
+🔑 (default) tw-username
+  => { handle: bs-handle, host: bs-host, did: at://did:plc:bv6ggog3tya2z3vxsub7hnal }
+```
+
+```sh
+🔑 (default) set tw-username bs-handle bs-host
+  => { handle: bs-handle, host: bs-host, did: at://did:plc:bv6ggog3tya2z3vxsub7hnal }
+```
+
+If you need to do so, you can set the table(s) to which you want to write:
+
+```sh
+🔑 (default) pick faves outgroup
+🔑 (faves,outgroup)
+```
+
+Otherwise, you'll be working with the default table.
+
+Using `pick` is enough to create the table; we'll switch to it if it exists, or make it and then switch to it.
+
+If you want to remove a table, switch to another table and use `drop`:
+
+```sh
+🔑 (faves) pick default
+🔑 (default) drop faves
+Removed faves
+```
+
+### 01: Set it and (for)get it
+
+#### Running
 
 In `kv-store`, run
 
