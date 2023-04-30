@@ -11,7 +11,7 @@ import (
 	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/utils"
 )
 
-var mem = make(map[string]map[string]string)
+var mem = make(map[string]map[string][]byte)
 
 var STORAGE_BASE = "storage.json"
 
@@ -53,7 +53,7 @@ func handleConnection(conn net.Conn) {
 		conn.Write([]byte(dropped))
 	} else if cmd == "get" {
 		got := Get(args[2], tables)
-		conn.Write([]byte(got))
+		conn.Write([]byte(fmt.Sprintf("%v", got)))
 	} else if cmd == "set" {
 		err := utils.ValidateSet(args[2:])
 		if err != nil {
@@ -88,7 +88,7 @@ func loadDatastore(table string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	localTable := make(map[string]string)
+	localTable := make(map[string][]byte)
 	json.Unmarshal(byteValue, &localTable)
 	mem[table] = localTable
 	fmt.Println(mem)
@@ -115,17 +115,17 @@ func updateDatastore(table string) {
 	jsonFile.Write(jsonData)
 }
 
-func Get(key string, tables []string) string {
+func Get(key string, tables []string) utils.UserRecord {
 	// TODO: placeholder code is just a placeholder
 	// This needs to be more intelligent than just
 	// printing all values, table by table.
-	last := ""
+	var last utils.UserRecord
 	for _, table := range tables {
 		loadDatastore(table)
 		val, ok := mem[table][key]
-		last = val
+		last = utils.Decode(val)
 		if !ok {
-			last = "<not found>"
+			fmt.Printf("Key %s not found in table %s\n", key, table)
 		}
 	}
 	return last
@@ -135,9 +135,9 @@ func Set(key string, value utils.UserRecord, tables []string) {
 	// Flush mem to {table}_storage.json
 	for _, table := range tables {
 		if _, ok := mem[table]; !ok {
-			mem[table] = make(map[string]string)
+			mem[table] = make(map[string][]byte)
 		}
-		mem[table][key] = fmt.Sprintf("%v", value)
+		mem[table][key] = utils.Encode(value)
 		updateDatastore(table)
 	}
 	fmt.Printf("Set %s to %s", key, value)
