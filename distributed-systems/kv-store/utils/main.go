@@ -29,27 +29,29 @@ func Decode(bytes []byte) UserRecord {
 	u := UserRecord{}
 
 	handleLen, err := strconv.Atoi(string(bytes[:FIELD_SIZE_LENGTH]))
-	fmt.Println("handleLen", handleLen)
 	if err != nil {
 		fmt.Println("err in decoding handle length:", err)
 	}
-	u.HH.Handle = string(bytes[FIELD_SIZE_LENGTH : handleLen+FIELD_SIZE_LENGTH])
+	handle := string(bytes[FIELD_SIZE_LENGTH : handleLen+FIELD_SIZE_LENGTH])
+	u.HH.Handle = handle
 
-	hostLen, err := strconv.Atoi(string(bytes[handleLen+FIELD_SIZE_LENGTH : handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH]))
-
+	hostStart := handleLen + FIELD_SIZE_LENGTH
+	hostLen, err := strconv.Atoi(string(bytes[hostStart : hostStart+FIELD_SIZE_LENGTH]))
 	if err != nil {
 		fmt.Println("err in decoding host length:", err)
 	}
+	hostEnd := hostStart + FIELD_SIZE_LENGTH + hostLen
+	host := string(bytes[hostStart+FIELD_SIZE_LENGTH : hostEnd])
+	u.HH.Host = host
 
-	u.HH.Host = string(bytes[handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH : handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH+hostLen])
-
-	didLen, err := strconv.Atoi(string(bytes[handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH+hostLen : handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH+hostLen+FIELD_SIZE_LENGTH]))
-
+	didStart := FIELD_SIZE_LENGTH + handleLen + FIELD_SIZE_LENGTH + hostLen
+	didLen, err := strconv.Atoi(string(bytes[didStart : didStart+FIELD_SIZE_LENGTH]))
 	if err != nil {
 		fmt.Println("err in decoding did length:", err)
 	}
-
-	u.Did = string(bytes[handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH+hostLen+FIELD_SIZE_LENGTH : handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH+hostLen+FIELD_SIZE_LENGTH+didLen])
+	didEnd := didStart + FIELD_SIZE_LENGTH + didLen
+	did := string(bytes[didStart+FIELD_SIZE_LENGTH : didEnd])
+	u.Did = did
 
 	return u
 }
