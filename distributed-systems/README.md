@@ -6,6 +6,8 @@ A mapping between Twitter handle and handle & host for AT Protocol
 
 When adding a new Twitter handle, we go ahead and fetch the decentralized identifier (DID) from the PDS you specified as the host.
 
+### How to
+
 ```sh
 🔑 (default) tw-username
   => {{ handle: bs-handle, host: bsky.social }, did: at://did:plc:bv6ggog3tya2z3vxsub7hnal }
@@ -35,9 +37,7 @@ If you want to remove a table, switch to another table and use `drop`:
 Removed faves
 ```
 
-### 01: Set it and (for)get it
-
-#### Running
+### Running
 
 In `kv-store`, run
 
@@ -56,6 +56,19 @@ If you'd prefer to send data directly to the server without the client, start th
 ```sh
 $ echo -n "table get my-key" | nc localhost 8888
 ```
+
+### Encoding strategy
+
+```
+Handle length (2 bytes) [00 aa]
+Handle (x bytes) [01 bb ...]
+Host length (2 bytes) [02 cc ...]
+Host (y bytes) [03 dd ...]
+DID length (2 bytes) [04 ee ...]
+DID (z bytes) [05 ff ...]
+```
+
+We haven't encoded field identifiers yet, but that's coming up soon.
 
 ## Development
 

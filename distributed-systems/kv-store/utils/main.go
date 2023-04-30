@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type HH struct {
@@ -20,6 +21,62 @@ type UserRecord struct {
 // {"did":"did:plc:..."}
 type DidResponse struct {
 	Did string
+}
+
+const FIELD_SIZE_LENGTH = 2
+
+func Decode(bytes []byte) UserRecord {
+	u := UserRecord{}
+
+	handleLen, err := strconv.Atoi(string(bytes[:FIELD_SIZE_LENGTH]))
+	fmt.Println("handleLen", handleLen)
+	if err != nil {
+		fmt.Println("err in decoding handle length:", err)
+	}
+	u.HH.Handle = string(bytes[FIELD_SIZE_LENGTH : handleLen+FIELD_SIZE_LENGTH])
+
+	hostLen, err := strconv.Atoi(string(bytes[handleLen+FIELD_SIZE_LENGTH : handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH]))
+
+	if err != nil {
+		fmt.Println("err in decoding host length:", err)
+	}
+
+	u.HH.Host = string(bytes[handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH : handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH+hostLen])
+
+	didLen, err := strconv.Atoi(string(bytes[handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH+hostLen : handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH+hostLen+FIELD_SIZE_LENGTH]))
+
+	if err != nil {
+		fmt.Println("err in decoding did length:", err)
+	}
+
+	u.Did = string(bytes[handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH+hostLen+FIELD_SIZE_LENGTH : handleLen+FIELD_SIZE_LENGTH+FIELD_SIZE_LENGTH+hostLen+FIELD_SIZE_LENGTH+didLen])
+
+	return u
+}
+
+func Encode(user UserRecord) []byte {
+	var buffer []byte
+
+	handle := user.HH.Handle
+	host := user.HH.Host
+	did := user.Did
+
+	for _, field := range []string{handle, host, did} {
+		fieldLen, fieldBytes := getBytesForEncoding(user, field)
+		buffer = append(buffer, fieldLen...)
+		buffer = append(buffer, fieldBytes...)
+	}
+
+	return buffer
+}
+
+func getBytesForEncoding(user UserRecord, field string) ([]byte, []byte) {
+	fieldValueLen := len(field)
+
+	fieldValueLenBytes := make([]byte, FIELD_SIZE_LENGTH)
+	copy(fieldValueLenBytes, []byte(strconv.Itoa(fieldValueLen)))
+
+	return fieldValueLenBytes, []byte(field)
 }
 
 // FetchDid fetches the DID for a given handle and host.
