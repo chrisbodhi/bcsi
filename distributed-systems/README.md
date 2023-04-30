@@ -54,7 +54,7 @@ $ go run client/client.go
 If you'd prefer to send data directly to the server without the client, start the server as above and then run
 
 ```sh
-$ echo -n "get my-key" | nc localhost 8888
+$ echo -n "table get my-key" | nc localhost 8888
 ```
 
 ## Development
