@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 type HH struct {
@@ -33,11 +32,11 @@ func FetchDid(handle, host string) string {
 		fmt.Println("err in request to", host, "with", handle, ":", err)
 	}
 	defer resp.Body.Close()
-	// Check status code
+
 	if resp.StatusCode != http.StatusOK {
 		fmt.Println("status code error:", resp.StatusCode, resp.Status)
 	}
-	// Decode response body
+
 	var didResponse DidResponse
 	err = json.NewDecoder(resp.Body).Decode(&didResponse)
 	if err != nil {
@@ -70,8 +69,4 @@ func ValidateSet(parts []string) error {
 	}
 
 	return nil
-}
-
-func WithSpace(inputs []string) string {
-	return strings.Join(inputs, " ")
 }
