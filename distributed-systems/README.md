@@ -8,12 +8,12 @@ When adding a new Twitter handle, we go ahead and fetch the decentralized identi
 
 ```sh
 🔑 (default) tw-username
-  => { handle: bs-handle, host: bs-host, did: at://did:plc:bv6ggog3tya2z3vxsub7hnal }
+  => {{ handle: bs-handle, host: bsky.social }, did: at://did:plc:bv6ggog3tya2z3vxsub7hnal }
 ```
 
 ```sh
-🔑 (default) set tw-username bs-handle bs-host
-  => { handle: bs-handle, host: bs-host, did: at://did:plc:bv6ggog3tya2z3vxsub7hnal }
+🔑 (default) set tw-username bs-handle
+  => {{ handle: bs-handle, host: bsky.social }, did: at://did:plc:bv6ggog3tya2z3vxsub7hnal }
 ```
 
 If you need to do so, you can set the table(s) to which you want to write:

@@ -55,16 +55,16 @@ func handleConnection(conn net.Conn) {
 		got := Get(args[2], tables)
 		conn.Write([]byte(got))
 	} else if cmd == "set" {
-		err := utils.ValidateSet(args[2])
+		err := utils.ValidateSet(args[2:])
 		if err != nil {
 			fmt.Println(err)
 			conn.Write([]byte("<validation error>"))
 			return
 		}
-		setPieces := strings.Split(utils.WithSpace(args[2:]), "=")
-		k, v := setPieces[0], utils.WithSpace(setPieces[1:])
+		setPieces := utils.InputToSetPieces(args[3:])
+		k, v := args[2], setPieces
 		Set(k, v, tables)
-		conn.Write([]byte("ok"))
+		conn.Write([]byte(fmt.Sprintf("%v", v)))
 	} else {
 		fmt.Println("Unknown command:", cmd)
 	}
@@ -131,13 +131,13 @@ func Get(key string, tables []string) string {
 	return last
 }
 
-func Set(key, value string, tables []string) {
+func Set(key string, value utils.UserRecord, tables []string) {
 	// Flush mem to {table}_storage.json
 	for _, table := range tables {
 		if _, ok := mem[table]; !ok {
 			mem[table] = make(map[string]string)
 		}
-		mem[table][key] = value
+		mem[table][key] = fmt.Sprintf("%v", value)
 		updateDatastore(table)
 	}
 	fmt.Printf("Set %s to %s", key, value)
