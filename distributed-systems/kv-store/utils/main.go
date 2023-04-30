@@ -26,34 +26,29 @@ type DidResponse struct {
 const FIELD_SIZE_LENGTH = 2
 
 func Decode(bytes []byte) UserRecord {
-	u := UserRecord{}
+	user := UserRecord{}
+	start, end := 0, FIELD_SIZE_LENGTH
 
-	handleLen, err := strconv.Atoi(string(bytes[:FIELD_SIZE_LENGTH]))
-	if err != nil {
-		fmt.Println("err in decoding handle length:", err)
+	for _, key := range []string{"handle", "host", "did"} {
+		fieldLen, err := strconv.Atoi(string(bytes[start:end]))
+		if err != nil {
+			fmt.Println("err in decoding field length:", err)
+		}
+		field := string(bytes[end : end+fieldLen])
+		start = end + fieldLen
+		end = start + FIELD_SIZE_LENGTH
+
+		switch key {
+		case "handle":
+			user.HH.Handle = field
+		case "host":
+			user.HH.Host = field
+		case "did":
+			user.Did = field
+		}
 	}
-	handle := string(bytes[FIELD_SIZE_LENGTH : handleLen+FIELD_SIZE_LENGTH])
-	u.HH.Handle = handle
 
-	hostStart := handleLen + FIELD_SIZE_LENGTH
-	hostLen, err := strconv.Atoi(string(bytes[hostStart : hostStart+FIELD_SIZE_LENGTH]))
-	if err != nil {
-		fmt.Println("err in decoding host length:", err)
-	}
-	hostEnd := hostStart + FIELD_SIZE_LENGTH + hostLen
-	host := string(bytes[hostStart+FIELD_SIZE_LENGTH : hostEnd])
-	u.HH.Host = host
-
-	didStart := FIELD_SIZE_LENGTH + handleLen + FIELD_SIZE_LENGTH + hostLen
-	didLen, err := strconv.Atoi(string(bytes[didStart : didStart+FIELD_SIZE_LENGTH]))
-	if err != nil {
-		fmt.Println("err in decoding did length:", err)
-	}
-	didEnd := didStart + FIELD_SIZE_LENGTH + didLen
-	did := string(bytes[didStart+FIELD_SIZE_LENGTH : didEnd])
-	u.Did = did
-
-	return u
+	return user
 }
 
 func Encode(user UserRecord) []byte {
