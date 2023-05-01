@@ -8,14 +8,10 @@ import (
 	"strconv"
 )
 
-type HH struct {
+type UserRecord struct {
 	Handle string
 	Host   string
-}
-
-type UserRecord struct {
-	HH
-	Did string
+	Did    string
 }
 
 // {"did":"did:plc:..."}
@@ -40,9 +36,9 @@ func Decode(bytes []byte) UserRecord {
 
 		switch key {
 		case "handle":
-			user.HH.Handle = field
+			user.Handle = field
 		case "host":
-			user.HH.Host = field
+			user.Host = field
 		case "did":
 			user.Did = field
 		}
@@ -54,8 +50,8 @@ func Decode(bytes []byte) UserRecord {
 func Encode(user UserRecord) []byte {
 	var buffer []byte
 
-	handle := user.HH.Handle
-	host := user.HH.Host
+	handle := user.Handle
+	host := user.Host
 	did := user.Did
 
 	for _, field := range []string{handle, host, did} {
@@ -104,8 +100,9 @@ func InputToSetPieces(input []string) UserRecord {
 	host := "bsky.social"
 
 	return UserRecord{
-		HH:  HH{input[0], host},
-		Did: FetchDid(input[0], host),
+		Handle: input[0],
+		Host:   host,
+		Did:    FetchDid(input[0], host),
 	}
 }
 
