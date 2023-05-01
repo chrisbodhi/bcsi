@@ -26,7 +26,16 @@ func Decode(bytes []byte) UserRecord {
 	start, end := 0, FIELD_SIZE_LENGTH
 
 	for _, key := range []string{"handle", "host", "did"} {
-		fieldLen, err := strconv.Atoi(string(bytes[start:end]))
+		snip := string(bytes[start:end])
+		sansZeroes := []byte{}
+		for _, b := range snip {
+			if b != 0 {
+				sansZeroes = append(sansZeroes, byte(b))
+			}
+		}
+		// If the second byte is a 0, then Atoi errors. Hence, the need
+		// to remove the 0s.
+		fieldLen, err := strconv.Atoi(string(sansZeroes))
 		if err != nil {
 			fmt.Println("err in decoding field length:", err)
 		}
