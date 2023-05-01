@@ -33,6 +33,11 @@ func main() {
 		}
 		go handleConnection(conn)
 	}
+	// TODO: change main to accept a port when starting;
+	//       default to 8888
+	// TODO: start up two other instances of server.go
+	//       with known ports
+	// TODO: add a pass-through step for DROP, SET commands
 }
 
 func handleConnection(conn net.Conn) {
