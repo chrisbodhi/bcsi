@@ -42,8 +42,10 @@ Removed faves
 In `kv-store`, run
 
 ```sh
-$ go run server/server.go
+$ go run lb/lb.go
 ```
+
+NB This will start two instances of `server/server.go`, one on port `8889` and another on `8890`.
 
 In another tab/window/terminal, run
 

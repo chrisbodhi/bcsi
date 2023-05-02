@@ -1,9 +1,10 @@
-package main
+package server
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"os"
 	"strings"
@@ -13,34 +14,31 @@ import (
 
 var mem = make(map[string]map[string][]byte)
 
+var DEFAULT_PORT = "8888"
 var STORAGE_BASE = "storage.json"
 
-func main() {
-	port := os.Args[1]
-	if port == "" {
-		port = "8888"
-	}
-	portNumber := fmt.Sprintf(":%s", port)
+func Start(port string) {
 	// TODO: are these two lines necessary?
 	table := "default"
 	loadDatastore(table)
-	listener, err := net.Listen("tcp", portNumber)
+	fmt.Println("received port", port)
+	listener, err := net.Listen("tcp", port)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal("!!", err)
 	}
-	fmt.Printf("Listening on %s...\n", portNumber)
+	fmt.Printf("Listening on %s...\n", port)
 	defer listener.Close()
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("err with", port, ":", err)
 		}
 		go handleConnection(conn)
 	}
 	// DONE: change main to accept a port when starting;
 	//       default to 8888
-	// TODO: start up two other instances of server.go
+	// DONE: start up two other instances of server.go
 	//       with known ports
 	// TODO: add write-ahead logging for DROP, SET commands
 }
@@ -168,4 +166,8 @@ func Drop(table string) string {
 	}
 
 	return fmt.Sprintf("Removed %s", table)
+}
+
+func Close() {
+	fmt.Println("Closing...")
 }

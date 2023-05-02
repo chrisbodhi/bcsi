@@ -71,6 +71,7 @@ func main() {
 }
 
 func sendAndReceive(input string, table string) {
+	// TODO: change up to work with lb and two servers
 	conn, err := net.Dial("tcp", ":8888")
 	if err != nil {
 		fmt.Println(err)
