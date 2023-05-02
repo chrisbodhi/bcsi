@@ -57,9 +57,7 @@ func main() {
 				sendAndReceive(line, table)
 			}
 		} else if cmd == "set" {
-			setArg := utils.WithSpace(args[1:])
-			// Validate equals sign
-			err := utils.ValidateSet(setArg)
+			err := utils.ValidateSet(args[1:])
 			if err != nil {
 				fmt.Println(err)
 			}
