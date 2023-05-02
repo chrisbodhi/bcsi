@@ -16,14 +16,19 @@ var mem = make(map[string]map[string][]byte)
 var STORAGE_BASE = "storage.json"
 
 func main() {
+	port := os.Args[1]
+	if port == "" {
+		port = "8888"
+	}
+	portNumber := fmt.Sprintf(":%s", port)
 	// TODO: are these two lines necessary?
 	table := "default"
 	loadDatastore(table)
-	listener, err := net.Listen("tcp", ":8888")
+	listener, err := net.Listen("tcp", portNumber)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Listening on :8888...")
+	fmt.Printf("Listening on %s...\n", portNumber)
 	defer listener.Close()
 
 	for {
