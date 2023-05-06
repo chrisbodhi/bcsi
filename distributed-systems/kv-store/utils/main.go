@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strconv"
 )
@@ -129,4 +130,9 @@ func ValidateSet(parts []string) error {
 	}
 
 	return nil
+}
+
+// Random returns a random number between x and y, inclusive.
+func Random(x, y int) int {
+	return x + rand.Intn(y-x)
 }

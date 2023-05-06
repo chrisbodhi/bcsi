@@ -14,7 +14,6 @@ import (
 
 var mem = make(map[string]map[string][]byte)
 
-var DEFAULT_PORT = "8888"
 var STORAGE_BASE = "storage.json"
 
 func Start(port string) {
