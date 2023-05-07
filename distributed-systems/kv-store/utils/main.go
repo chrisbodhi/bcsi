@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -135,4 +136,28 @@ func ValidateSet(parts []string) error {
 // Random returns a random number between x and y, inclusive.
 func Random(x, y int) int {
 	return x + rand.Intn(y-x)
+}
+
+// WriteAhead takes a command and writes it to a file.
+func WriteAhead(line string) {
+	filename := "ahead.txt"
+
+	// Create write-ahead log if it doesn't exist
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		_, err := os.Create(filename)
+		if err != nil {
+			fmt.Println("err in creating file:", err)
+		}
+	}
+
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("err in opening file:", err)
+	}
+
+	defer f.Close()
+
+	if _, err := f.WriteString(line + "\n"); err != nil {
+		fmt.Println("err in writing to file:", err)
+	}
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -35,11 +36,6 @@ func Start(port string) {
 		}
 		go handleConnection(conn)
 	}
-	// DONE: change main to accept a port when starting;
-	//       default to 8888
-	// DONE: start up two other instances of server.go
-	//       with known ports
-	// TODO: add write-ahead logging for DROP, SET commands
 }
 
 func handleConnection(conn net.Conn) {
@@ -56,10 +52,28 @@ func handleConnection(conn net.Conn) {
 	cmd := args[1]
 
 	if cmd == "drop" {
-		dropped := Drop(displayTables)
+		dropped, err := Drop(displayTables)
+		if err != nil {
+			fmt.Println(err)
+			msg := fmt.Sprintf("<table error: %s not found>", displayTables)
+			conn.Write([]byte(msg))
+			return
+		}
+		utils.WriteAhead(key)
 		conn.Write([]byte(dropped))
 	} else if cmd == "get" {
-		got := Get(args[2], tables)
+		if len(tables) > 1 {
+			fmt.Println("Only one table allowed for GET")
+			conn.Write([]byte("<validation error: only one table allowed at a time>"))
+			return
+		}
+		got, err := Get(args[2], tables[0])
+		if err != nil {
+			fmt.Println(err)
+			msg := fmt.Sprintf("<%v for %s in %s>", err, args[2], tables[0])
+			conn.Write([]byte(msg))
+			return
+		}
 		conn.Write([]byte(fmt.Sprintf("%v", got)))
 	} else if cmd == "set" {
 		err := utils.ValidateSet(args[2:])
@@ -71,6 +85,7 @@ func handleConnection(conn net.Conn) {
 		setPieces := utils.InputToSetPieces(args[3:])
 		k, v := args[2], setPieces
 		Set(k, v, tables)
+		utils.WriteAhead(key)
 		conn.Write([]byte(fmt.Sprintf("%v", v)))
 	} else {
 		fmt.Println("Unknown command:", cmd)
@@ -103,6 +118,7 @@ func loadDatastore(table string) {
 
 func updateDatastore(table string) {
 	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
+
 	// Create storage file if it doesn't exist
 	if _, err := os.Stat(storage); os.IsNotExist(err) {
 		_, err := os.Create(storage)
@@ -122,20 +138,16 @@ func updateDatastore(table string) {
 	jsonFile.Write(jsonData)
 }
 
-func Get(key string, tables []string) utils.UserRecord {
-	// TODO: placeholder code is just a placeholder
-	// This needs to be more intelligent than just
-	// printing all values, table by table.
+func Get(key string, table string) (utils.UserRecord, error) {
 	var last utils.UserRecord
-	for _, table := range tables {
-		loadDatastore(table)
-		val, ok := mem[table][key]
-		last = utils.Decode(val)
-		if !ok {
-			fmt.Printf("Key %s not found in table %s\n", key, table)
-		}
+	loadDatastore(table)
+	val, ok := mem[table][key]
+	if !ok {
+		fmt.Printf("Key %s not found in table %s\n", key, table)
+		return last, errors.New("Key not found")
 	}
-	return last
+	last = utils.Decode(val)
+	return last, nil
 }
 
 func Set(key string, value utils.UserRecord, tables []string) {
@@ -145,26 +157,28 @@ func Set(key string, value utils.UserRecord, tables []string) {
 			mem[table] = make(map[string][]byte)
 		}
 		mem[table][key] = utils.Encode(value)
-		// utils.WriteLog(key, value, table)
 		updateDatastore(table)
 	}
 	fmt.Printf("Set %s to %s", key, value)
 }
 
-func Drop(table string) string {
+func Drop(table string) (string, error) {
 	// Remove from mem
 	if _, ok := mem[table]; ok {
 		delete(mem, table)
 	} else {
-		return fmt.Sprintf("%s does not exist", table)
+		msg := fmt.Sprintf("%s does not exist", table)
+		return "", errors.New(msg)
 	}
 	// Rename backing datastore/file
 	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
 	if err := os.Rename(storage, fmt.Sprintf("dropped_%s", table)); err != nil {
-		return fmt.Sprintf("Failed to removing backing datastore for %s", table)
+		msg := fmt.Sprintf("Failed to removing backing datastore for %s", table)
+		return msg, nil
 	}
 
-	return fmt.Sprintf("Removed %s", table)
+	msg := fmt.Sprintf("Removed %s", table)
+	return msg, nil
 }
 
 func Close() {
