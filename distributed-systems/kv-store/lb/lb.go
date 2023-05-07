@@ -10,8 +10,6 @@ import (
 	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/utils"
 )
 
-var PORTS = []string{":8889", ":8890"}
-
 func main() {
 	fmt.Println("Starting servers...")
 
@@ -21,12 +19,12 @@ func main() {
 	wg.Add(2)
 
 	go func() {
-		server.Start(PORTS[0])
+		server.Start(utils.PORTS[0])
 		defer wg.Done()
 	}()
 
 	go func() {
-		server.Start(PORTS[1])
+		server.Start(utils.PORTS[1])
 		defer wg.Done()
 	}()
 
@@ -57,8 +55,8 @@ func handleRequests(port string) {
 func handleConnection(conn net.Conn) {
 	// Pick a number between 0 and the length of PORTS.
 	// This will be used to select a port to connect to.
-	portIndex := utils.Random(0, len(PORTS))
-	port := PORTS[portIndex]
+	portIndex := utils.Random(0, len(utils.PORTS))
+	port := utils.PORTS[portIndex]
 
 	// Create a connection to either 8889 or 8890.
 	// 8889 and 8890 better be listening for incoming connections!

@@ -57,7 +57,8 @@ func handleConnection(conn net.Conn) {
 			conn.Write([]byte(msg))
 			return
 		}
-		utils.WriteAhead(key)
+		// TODO: make more robust, since conn.Write may finish first
+		go utils.WriteAhead(key)
 		conn.Write([]byte(dropped))
 	case "get":
 		if len(tables) > 1 {
@@ -82,8 +83,9 @@ func handleConnection(conn net.Conn) {
 		}
 		setPieces := utils.InputToSetPieces(args[3:])
 		k, v := args[2], setPieces
+		// TODO: make more robust, since Set and conn.Write may finish first
+		go utils.WriteAhead(key)
 		Set(k, v, tables, port)
-		utils.WriteAhead(key)
 		conn.Write([]byte(fmt.Sprintf("%v", v)))
 	default:
 		fmt.Println("Unknown command:", cmd)

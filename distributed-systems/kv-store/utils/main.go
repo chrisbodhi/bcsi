@@ -27,6 +27,7 @@ const (
 	STORAGE_BASE      = "storage.json"
 )
 
+var PORTS = []string{":8889", ":8890"}
 var mem = make(map[string]map[string][]byte)
 
 func Decode(bytes []byte) UserRecord {
@@ -138,11 +139,43 @@ func Drop(table, port string) (string, error) {
 
 func Set(key string, value UserRecord, table, port string) {
 	if _, ok := mem[table]; !ok {
-		// Flush mem to {port}_{table}_storage.json
 		mem[table] = make(map[string][]byte)
 	}
 	mem[table][key] = Encode(value)
-	UpdateDatastore(table, port)
+	// Flush mem to {port}_{table}_storage.json
+	err := UpdateDatastore(table, port)
+	if err != nil {
+		fmt.Println("err in updating datastore:", err)
+	}
+
+	// Async replicate to other nodes
+	remainingPorts := GetOtherPorts(port)
+	c := make(chan string)
+	res := make([]string, len(remainingPorts))
+	for i, p := range remainingPorts {
+		go Replicate(table, p, c)
+		res[i] = <-c
+	}
+	fmt.Println(res)
+}
+
+func GetOtherPorts(port string) []string {
+	others := []string{}
+	for _, p := range PORTS {
+		if p != port {
+			others = append(others, p)
+		}
+	}
+	return others
+}
+
+func Replicate(table, p string, c chan string) {
+	err := UpdateDatastore(table, p)
+	if err != nil {
+		c <- fmt.Sprintf("Failed to replicate %s to %s", table, p)
+	} else {
+		c <- fmt.Sprintf("Replicated %s to %s", table, p)
+	}
 }
 
 func InputToSetPieces(input []string) UserRecord {
@@ -179,6 +212,9 @@ func Random(x, y int) int {
 
 // WriteAhead takes a command and writes it to a file.
 func WriteAhead(line string) {
+	// TODO: this doesn't help when we want to replay the log.
+	// How do we know when, in the log, to start playback?
+	// And, for that matter, when to end?
 	filename := "ahead.txt"
 
 	// Create write-ahead log if it doesn't exist
@@ -224,7 +260,7 @@ func LoadDatastore(port, table string) {
 	mem[table] = localTable
 }
 
-func UpdateDatastore(table, port string) {
+func UpdateDatastore(table, port string) error {
 	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
 
 	// Create storage file if it doesn't exist
@@ -232,16 +268,21 @@ func UpdateDatastore(table, port string) {
 		_, err := os.Create(storage)
 		if err != nil {
 			fmt.Println(err)
+			return err
 		}
 	}
 	jsonFile, err := os.OpenFile(storage, os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
 	defer jsonFile.Close()
 	jsonData, err := json.Marshal(mem[table])
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
 	jsonFile.Write(jsonData)
+
+	return nil
 }
