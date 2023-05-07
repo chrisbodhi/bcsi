@@ -138,7 +138,7 @@ func Drop(table, port string) (string, error) {
 
 func Set(key string, value UserRecord, table, port string) {
 	if _, ok := mem[table]; !ok {
-		// Flush mem to {table}_storage.json
+		// Flush mem to {port}_{table}_storage.json
 		mem[table] = make(map[string][]byte)
 	}
 	mem[table][key] = Encode(value)
