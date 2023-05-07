@@ -107,7 +107,7 @@ func Get(key, table, port string) (utils.UserRecord, error) {
 func Set(key string, value utils.UserRecord, tables []string, port string) {
 	for _, table := range tables {
 		utils.Set(key, value, table, port)
-		fmt.Printf("Set %s to %s in %s", key, value, table)
+		fmt.Printf("Set %s to %s in %s\n", key, value, table)
 	}
 }
 

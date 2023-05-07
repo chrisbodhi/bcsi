@@ -142,6 +142,7 @@ func Set(key string, value UserRecord, table, port string) {
 		mem[table] = make(map[string][]byte)
 	}
 	mem[table][key] = Encode(value)
+
 	// Flush mem to {port}_{table}_storage.json
 	err := UpdateDatastore(table, port)
 	if err != nil {
@@ -155,8 +156,8 @@ func Set(key string, value UserRecord, table, port string) {
 	for i, p := range remainingPorts {
 		go Replicate(table, p, c)
 		res[i] = <-c
+		fmt.Printf("res from %s is: %s\n", remainingPorts[i], res[i])
 	}
-	fmt.Println(res)
 }
 
 func GetOtherPorts(port string) []string {
