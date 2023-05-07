@@ -20,7 +20,7 @@ var STORAGE_BASE = "storage.json"
 func Start(port string) {
 	// TODO: are these two lines necessary?
 	table := "default"
-	loadDatastore(table)
+	loadDatastore(port, table)
 	fmt.Println("received port", port)
 	listener, err := net.Listen("tcp", port)
 	if err != nil {
@@ -39,6 +39,10 @@ func Start(port string) {
 }
 
 func handleConnection(conn net.Conn) {
+	addrComponents := strings.Split(conn.LocalAddr().String(), ":")
+	portNumber := addrComponents[len(addrComponents)-1]
+	port := fmt.Sprintf(":%s", portNumber)
+
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
 	if err != nil {
@@ -67,7 +71,7 @@ func handleConnection(conn net.Conn) {
 			conn.Write([]byte("<validation error: only one table allowed at a time>"))
 			return
 		}
-		got, err := Get(args[2], tables[0])
+		got, err := Get(args[2], tables[0], port)
 		if err != nil {
 			fmt.Println(err)
 			msg := fmt.Sprintf("<%v for %s in %s>", err, args[2], tables[0])
@@ -84,7 +88,7 @@ func handleConnection(conn net.Conn) {
 		}
 		setPieces := utils.InputToSetPieces(args[3:])
 		k, v := args[2], setPieces
-		Set(k, v, tables)
+		Set(k, v, tables, port)
 		utils.WriteAhead(key)
 		conn.Write([]byte(fmt.Sprintf("%v", v)))
 	} else {
@@ -92,8 +96,8 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-func loadDatastore(table string) {
-	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
+func loadDatastore(port, table string) {
+	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
 	// Create storage file if it doesn't exist
 	if _, err := os.Stat(storage); os.IsNotExist(err) {
 		_, err := os.Create(storage)
@@ -115,8 +119,8 @@ func loadDatastore(table string) {
 	mem[table] = localTable
 }
 
-func updateDatastore(table string) {
-	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
+func updateDatastore(table, port string) {
+	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
 
 	// Create storage file if it doesn't exist
 	if _, err := os.Stat(storage); os.IsNotExist(err) {
@@ -137,26 +141,26 @@ func updateDatastore(table string) {
 	jsonFile.Write(jsonData)
 }
 
-func Get(key string, table string) (utils.UserRecord, error) {
+func Get(key, table, port string) (utils.UserRecord, error) {
 	var last utils.UserRecord
-	loadDatastore(table)
+	loadDatastore(port, table)
 	val, ok := mem[table][key]
 	if !ok {
 		fmt.Printf("Key %s not found in table %s\n", key, table)
-		return last, errors.New("Key not found")
+		return last, errors.New("key not found")
 	}
 	last = utils.Decode(val)
 	return last, nil
 }
 
-func Set(key string, value utils.UserRecord, tables []string) {
+func Set(key string, value utils.UserRecord, tables []string, port string) {
 	// Flush mem to {table}_storage.json
 	for _, table := range tables {
 		if _, ok := mem[table]; !ok {
 			mem[table] = make(map[string][]byte)
 		}
 		mem[table][key] = utils.Encode(value)
-		updateDatastore(table)
+		updateDatastore(table, port)
 	}
 	fmt.Printf("Set %s to %s", key, value)
 }
