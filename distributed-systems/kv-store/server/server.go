@@ -55,7 +55,8 @@ func handleConnection(conn net.Conn) {
 	tables := strings.Split(displayTables, ",")
 	cmd := args[1]
 
-	if cmd == "drop" {
+	switch cmd {
+	case "drop":
 		dropped, err := Drop(displayTables)
 		if err != nil {
 			fmt.Println(err)
@@ -65,7 +66,7 @@ func handleConnection(conn net.Conn) {
 		}
 		utils.WriteAhead(key)
 		conn.Write([]byte(dropped))
-	} else if cmd == "get" {
+	case "get":
 		if len(tables) > 1 {
 			fmt.Println("Only one table allowed for GET")
 			conn.Write([]byte("<validation error: only one table allowed at a time>"))
@@ -79,7 +80,7 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		conn.Write([]byte(fmt.Sprintf("%v", got)))
-	} else if cmd == "set" {
+	case "set":
 		err := utils.ValidateSet(args[2:])
 		if err != nil {
 			fmt.Println(err)
@@ -91,7 +92,7 @@ func handleConnection(conn net.Conn) {
 		Set(k, v, tables, port)
 		utils.WriteAhead(key)
 		conn.Write([]byte(fmt.Sprintf("%v", v)))
-	} else {
+	default:
 		fmt.Println("Unknown command:", cmd)
 	}
 }
