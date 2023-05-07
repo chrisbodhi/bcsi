@@ -113,7 +113,6 @@ func loadDatastore(table string) {
 	localTable := make(map[string][]byte)
 	json.Unmarshal(byteValue, &localTable)
 	mem[table] = localTable
-	fmt.Println(mem)
 }
 
 func updateDatastore(table string) {
