@@ -1,26 +1,19 @@
 package server
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net"
-	"os"
 	"strings"
 
 	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/utils"
 )
 
-var mem = make(map[string]map[string][]byte)
-
-var STORAGE_BASE = "storage.json"
-
 func Start(port string) {
 	// TODO: are these two lines necessary?
 	table := "default"
-	loadDatastore(port, table)
+	utils.LoadDatastore(port, table)
 	fmt.Println("received port", port)
 	listener, err := net.Listen("tcp", port)
 	if err != nil {
@@ -57,7 +50,7 @@ func handleConnection(conn net.Conn) {
 
 	switch cmd {
 	case "drop":
-		dropped, err := Drop(displayTables)
+		dropped, err := Drop(displayTables, port)
 		if err != nil {
 			fmt.Println(err)
 			msg := fmt.Sprintf("<table error: %s not found>", displayTables)
@@ -97,55 +90,10 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-func loadDatastore(port, table string) {
-	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
-	// Create storage file if it doesn't exist
-	if _, err := os.Stat(storage); os.IsNotExist(err) {
-		_, err := os.Create(storage)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-	jsonFile, err := os.Open(storage)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer jsonFile.Close()
-	byteValue, err := io.ReadAll(jsonFile)
-	if err != nil {
-		fmt.Println(err)
-	}
-	localTable := make(map[string][]byte)
-	json.Unmarshal(byteValue, &localTable)
-	mem[table] = localTable
-}
-
-func updateDatastore(table, port string) {
-	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
-
-	// Create storage file if it doesn't exist
-	if _, err := os.Stat(storage); os.IsNotExist(err) {
-		_, err := os.Create(storage)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-	jsonFile, err := os.OpenFile(storage, os.O_RDWR, 0644)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer jsonFile.Close()
-	jsonData, err := json.Marshal(mem[table])
-	if err != nil {
-		fmt.Println(err)
-	}
-	jsonFile.Write(jsonData)
-}
-
 func Get(key, table, port string) (utils.UserRecord, error) {
 	var last utils.UserRecord
-	loadDatastore(port, table)
-	val, ok := mem[table][key]
+	utils.LoadDatastore(port, table)
+	val, ok := utils.Get(key, table)
 	if !ok {
 		fmt.Printf("Key %s not found in table %s\n", key, table)
 		return last, errors.New("key not found")
@@ -155,36 +103,18 @@ func Get(key, table, port string) (utils.UserRecord, error) {
 }
 
 func Set(key string, value utils.UserRecord, tables []string, port string) {
-	// Flush mem to {table}_storage.json
 	for _, table := range tables {
-		if _, ok := mem[table]; !ok {
-			mem[table] = make(map[string][]byte)
-		}
-		mem[table][key] = utils.Encode(value)
-		updateDatastore(table, port)
+		utils.Set(key, value, table, port)
+		fmt.Printf("Set %s to %s in %s", key, value, table)
 	}
-	fmt.Printf("Set %s to %s", key, value)
 }
 
-func Drop(table string) (string, error) {
-	// Remove from mem
-	if _, ok := mem[table]; ok {
-		delete(mem, table)
-	} else {
-		msg := fmt.Sprintf("%s does not exist", table)
-		return "", errors.New(msg)
-	}
-	// Rename backing datastore/file
-	storage := fmt.Sprintf("%s_%s", table, STORAGE_BASE)
-	if err := os.Rename(storage, fmt.Sprintf("dropped_%s", table)); err != nil {
-		msg := fmt.Sprintf("Failed to removing backing datastore for %s", table)
-		return msg, nil
+func Drop(table, port string) (string, error) {
+	msg, err := utils.Drop(table, port)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
 	}
 
-	msg := fmt.Sprintf("Removed %s", table)
 	return msg, nil
-}
-
-func Close() {
-	fmt.Println("Closing...")
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -21,7 +22,12 @@ type DidResponse struct {
 	Did string
 }
 
-const FIELD_SIZE_LENGTH = 2
+const (
+	FIELD_SIZE_LENGTH = 2
+	STORAGE_BASE      = "storage.json"
+)
+
+var mem = make(map[string]map[string][]byte)
 
 func Decode(bytes []byte) UserRecord {
 	user := UserRecord{}
@@ -106,6 +112,39 @@ func FetchDid(handle, host string) string {
 	return didResponse.Did
 }
 
+func Get(key, table string) ([]byte, bool) {
+	value, ok := mem[table][key]
+	return value, ok
+}
+
+func Drop(table, port string) (string, error) {
+	// Remove from mem
+	if _, ok := mem[table]; ok {
+		delete(mem, table)
+	} else {
+		msg := fmt.Sprintf("%s does not exist", table)
+		return "", errors.New(msg)
+	}
+
+	// Rename backing datastore/file
+	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
+	if err := os.Rename(storage, fmt.Sprintf("dropped_%s", table)); err != nil {
+		msg := fmt.Sprintf("Failed to removing backing datastore for %s", table)
+		return msg, nil
+	}
+	msg := fmt.Sprintf("Removed %s", table)
+	return msg, nil
+}
+
+func Set(key string, value UserRecord, table, port string) {
+	if _, ok := mem[table]; !ok {
+		// Flush mem to {table}_storage.json
+		mem[table] = make(map[string][]byte)
+	}
+	mem[table][key] = Encode(value)
+	UpdateDatastore(table, port)
+}
+
 func InputToSetPieces(input []string) UserRecord {
 	// Dragons! Hardcoded host until federation is implemented.
 	host := "bsky.social"
@@ -160,4 +199,49 @@ func WriteAhead(line string) {
 	if _, err := f.WriteString(line + "\n"); err != nil {
 		fmt.Println("err in writing to file:", err)
 	}
+}
+
+func LoadDatastore(port, table string) {
+	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
+	// Create storage file if it doesn't exist
+	if _, err := os.Stat(storage); os.IsNotExist(err) {
+		_, err := os.Create(storage)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	jsonFile, err := os.Open(storage)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer jsonFile.Close()
+	byteValue, err := io.ReadAll(jsonFile)
+	if err != nil {
+		fmt.Println(err)
+	}
+	localTable := make(map[string][]byte)
+	json.Unmarshal(byteValue, &localTable)
+	mem[table] = localTable
+}
+
+func UpdateDatastore(table, port string) {
+	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
+
+	// Create storage file if it doesn't exist
+	if _, err := os.Stat(storage); os.IsNotExist(err) {
+		_, err := os.Create(storage)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	jsonFile, err := os.OpenFile(storage, os.O_RDWR, 0644)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer jsonFile.Close()
+	jsonData, err := json.Marshal(mem[table])
+	if err != nil {
+		fmt.Println(err)
+	}
+	jsonFile.Write(jsonData)
 }
