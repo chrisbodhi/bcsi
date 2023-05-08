@@ -1,0 +1,37 @@
+direction: right
+
+client: {
+  shape: hexagon
+}
+
+dbA: {
+  label: "datastore A"
+  shape: cylinder
+}
+
+dbB: {
+  label: "datastore B"
+  shape: cylinder
+}
+
+lb: {
+  label: "load balancer"
+  shape: parallelogram
+}
+
+log: {
+  shape: stored_data
+}
+
+client -> lb
+lb -> "server A"
+lb -> "server B"
+
+"server A" -> dbA
+"server B" -> dbB
+
+"server A" -> dbB: async
+"server B" -> dbA: async
+
+"server A" -> log
+"server B" -> log
