@@ -42,8 +42,10 @@ Removed faves
 In `kv-store`, run
 
 ```sh
-$ go run server/server.go
+$ go run lb/lb.go
 ```
+
+NB This will start two instances of `server/server.go`, one on port `8889` and another on `8890`.
 
 In another tab/window/terminal, run
 
@@ -70,9 +72,20 @@ DID (z bytes) [05 ff ...]
 
 We haven't encoded field identifiers yet, but that's coming up soon.
 
+### Replication flow
+
+![diagram showing the flow of data created, built with d2](./chart.png)
+
+Using Go routines, data that is added via one server is replicated asyncronously to the other server. Both servers also write to a simple log, which is currently un-utilized.
+
 ## Development
 
 Developed with Go v1.19+
 
 In your editor, open the directory&mdash;eg `kv-store`&mdash;that has the `go.work` file in order to make use of Go's workspaces.
 
+### Rebuilding the chart
+
+```sh
+$ d2 chart.d2 -t 300 chart.png
+```

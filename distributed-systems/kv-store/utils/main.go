@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -19,7 +22,13 @@ type DidResponse struct {
 	Did string
 }
 
-const FIELD_SIZE_LENGTH = 2
+const (
+	FIELD_SIZE_LENGTH = 2
+	STORAGE_BASE      = "storage.json"
+)
+
+var PORTS = []string{":8889", ":8890"}
+var mem = make(map[string]map[string][]byte)
 
 func Decode(bytes []byte) UserRecord {
 	user := UserRecord{}
@@ -104,6 +113,72 @@ func FetchDid(handle, host string) string {
 	return didResponse.Did
 }
 
+func Get(key, table string) ([]byte, bool) {
+	value, ok := mem[table][key]
+	return value, ok
+}
+
+func Drop(table, port string) (string, error) {
+	// Remove from mem
+	if _, ok := mem[table]; ok {
+		delete(mem, table)
+	} else {
+		msg := fmt.Sprintf("%s does not exist", table)
+		return "", errors.New(msg)
+	}
+
+	// Rename backing datastore/file
+	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
+	if err := os.Rename(storage, fmt.Sprintf("dropped_%s", table)); err != nil {
+		msg := fmt.Sprintf("Failed to removing backing datastore for %s", table)
+		return msg, nil
+	}
+	msg := fmt.Sprintf("Removed %s", table)
+	return msg, nil
+}
+
+func Set(key string, value UserRecord, table, port string) {
+	if _, ok := mem[table]; !ok {
+		mem[table] = make(map[string][]byte)
+	}
+	mem[table][key] = Encode(value)
+
+	// Flush mem to {port}_{table}_storage.json
+	err := UpdateDatastore(table, port)
+	if err != nil {
+		fmt.Println("err in updating datastore:", err)
+	}
+
+	// Async replicate to other nodes
+	remainingPorts := GetOtherPorts(port)
+	c := make(chan string)
+	res := make([]string, len(remainingPorts))
+	for i, p := range remainingPorts {
+		go Replicate(table, p, c)
+		res[i] = <-c
+		fmt.Printf("res from %s is: %s\n", remainingPorts[i], res[i])
+	}
+}
+
+func GetOtherPorts(port string) []string {
+	others := []string{}
+	for _, p := range PORTS {
+		if p != port {
+			others = append(others, p)
+		}
+	}
+	return others
+}
+
+func Replicate(table, p string, c chan string) {
+	err := UpdateDatastore(table, p)
+	if err != nil {
+		c <- fmt.Sprintf("Failed to replicate %s to %s", table, p)
+	} else {
+		c <- fmt.Sprintf("Replicated %s to %s", table, p)
+	}
+}
+
 func InputToSetPieces(input []string) UserRecord {
 	// Dragons! Hardcoded host until federation is implemented.
 	host := "bsky.social"
@@ -127,6 +202,88 @@ func ValidateSet(parts []string) error {
 	if twHandle == "" || handle == "" {
 		return errors.New("usage: `set tw-handle handle`")
 	}
+
+	return nil
+}
+
+// Random returns a random number between x and y, inclusive.
+func Random(x, y int) int {
+	return x + rand.Intn(y-x)
+}
+
+// WriteAhead takes a command and writes it to a file.
+func WriteAhead(line string) {
+	// TODO: this doesn't help when we want to replay the log.
+	// How do we know when, in the log, to start playback?
+	// And, for that matter, when to end?
+	filename := "ahead.txt"
+
+	// Create write-ahead log if it doesn't exist
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		_, err := os.Create(filename)
+		if err != nil {
+			fmt.Println("err in creating file:", err)
+		}
+	}
+
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("err in opening file:", err)
+	}
+
+	defer f.Close()
+
+	if _, err := f.WriteString(line + "\n"); err != nil {
+		fmt.Println("err in writing to file:", err)
+	}
+}
+
+func LoadDatastore(port, table string) {
+	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
+	// Create storage file if it doesn't exist
+	if _, err := os.Stat(storage); os.IsNotExist(err) {
+		_, err := os.Create(storage)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	jsonFile, err := os.Open(storage)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer jsonFile.Close()
+	byteValue, err := io.ReadAll(jsonFile)
+	if err != nil {
+		fmt.Println(err)
+	}
+	localTable := make(map[string][]byte)
+	json.Unmarshal(byteValue, &localTable)
+	mem[table] = localTable
+}
+
+func UpdateDatastore(table, port string) error {
+	storage := fmt.Sprintf("%s_%s_%s", port, table, STORAGE_BASE)
+
+	// Create storage file if it doesn't exist
+	if _, err := os.Stat(storage); os.IsNotExist(err) {
+		_, err := os.Create(storage)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}
+	jsonFile, err := os.OpenFile(storage, os.O_RDWR, 0644)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	defer jsonFile.Close()
+	jsonData, err := json.Marshal(mem[table])
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	jsonFile.Write(jsonData)
 
 	return nil
 }
