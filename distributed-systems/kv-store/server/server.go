@@ -1,16 +1,19 @@
-package server
+package main
 
 import (
 	"errors"
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/utils"
 )
 
-func Start(port string) {
+func main() {
+	// port variable comes from first command line argument
+	port := fmt.Sprintf(":%s", os.Args[1])
 	// TODO: are these two lines necessary?
 	table := "default"
 	utils.LoadDatastore(port, table)

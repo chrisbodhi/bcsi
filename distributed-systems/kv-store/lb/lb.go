@@ -6,25 +6,17 @@ import (
 	"net"
 	"sync"
 
-	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/server"
 	"github.com/chrisbodhi/bcsi/distributed-systems/kv-store/utils"
 )
 
 func main() {
 	fmt.Println("Starting servers...")
 
-	go handleRequests(":8888")
-
 	wg := new(sync.WaitGroup)
-	wg.Add(2)
+	wg.Add(1)
 
 	go func() {
-		server.Start(utils.PORTS[0])
-		defer wg.Done()
-	}()
-
-	go func() {
-		server.Start(utils.PORTS[1])
+		handleRequests(":8888")
 		defer wg.Done()
 	}()
 
